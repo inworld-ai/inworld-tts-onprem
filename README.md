@@ -216,7 +216,7 @@ docker exec tts-onprem tail -f /var/log/public-tts-service.log
 
 ## Requirements
 
-- **NVIDIA H100 GPU**
+- **NVIDIA H100 SXM5 GPU**
 - NVIDIA Container Toolkit
 - Docker with GPU support
-- ~40GB disk space for the image
+- ~40GB disk space for the image download
