@@ -178,29 +178,6 @@ docker exec tts-onprem tail -f /var/log/tts-normalization.log
 docker exec tts-onprem tail -f /var/log/public-tts-service.log
 ```
 
-## Image Overview
-
-Container package:
-- **grpc-gateway** - HTTP REST API (matches Inworld cloud API format)
-- **w-proxy** - gRPC API proxy (routing and metrics)
-- **public-tts-service** - TTS service layer
-- **tts-normalization** - Text normalization service
-- **tts-v3-trtllm** - ML inference server (TensorRT-LLM, H100)
-
-**Architecture:** `HTTP/curl → grpc-gateway → w-proxy → public-tts-service → ML Server`
-
-## Source Images
-
-| Image | Tag | Comment |
-|-------|-----|---------|
-| `trt-speech-synthesizer-onprem` | `v1-h100` | ML inference server for H100 |
-| `tts-normalization` | `2ca1d1d3` | Text normalization service |
-| `public-tts-service` | `776a9dda` | TTS service layer (minimal profile) |
-| `w-proxy` | `21b0c10b` | gRPC API proxy |
-| `grpc-gateway` | `21b0c10b` | HTTP to gRPC transcoding |
-
-Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/backend/`
-
 ## Benchmarking
 
 https://github.com/inworld-ai/inworld-tts-onprem/blob/main/REF-BENCHMARK.md
