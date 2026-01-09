@@ -1,4 +1,4 @@
-# TTS On-Prem Container (H100)
+# TTS On-Prem
 
 All-in-one TTS container for on-premise deployment on NVIDIA H100 GPUs.
 
