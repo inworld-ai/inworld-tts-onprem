@@ -193,3 +193,7 @@ Container package:
 | `grpc-gateway` | `21b0c10b` | HTTP to gRPC transcoding |
 
 Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/backend/`
+
+## Benchmarking
+
+We provide a comprehensize load-test facility and reference benchmark results. Follow up tts-load-test-simple/README.md#quick-start to get the benchmark results for your deployment and compare with REF-BENCHMARK.md result.
