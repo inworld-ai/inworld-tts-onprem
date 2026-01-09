@@ -33,7 +33,7 @@ python tts-load-test-simple.main \
 
 | Parameter | Description | Example |
 |---|---|---|
-| `--host` | Base address of the TTS server (endpoint auto-appended) | `http://tts-v3-turbo-torch.dev.oc.inworld.dev` |
+| `--host` | Base address of the On-Premise TTS server (endpoint auto-appended) | `http://localhost:8081` |
 
 ## Load Configuration
 
