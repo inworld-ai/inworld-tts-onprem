@@ -28,36 +28,36 @@ python tts-load-test-simple.main \
 
 ## Parameters
 
-### Required Parameters
+## Required Parameters
 
 | Parameter | Description | Example |
-|-----------|-------------|---------|
+|---|---|---|
 | `--host` | Base address of the TTS server (endpoint auto-appended) | `http://tts-v3-turbo-torch.dev.oc.inworld.dev` |
 
-### Load Configuration
+## Load Configuration
 
 | Parameter | Default | Description |
-|-----------|---------|-------------|
+|---|---:|---|
 | `--min-qps` | `1.0` | Minimum requests per second to test |
 | `--max-qps` | `10.0` | Maximum requests per second to test |
 | `--qps-step` | `2.0` | Step size for QPS increments |
 | `--number-of-samples` | `1` | Total number of texts to synthesize per QPS level |
-| `--burstiness` | `1.0` | Request timing pattern (1.0=Poisson, <1.0=bursty, >1.0=uniform) |
+| `--burstiness` | `1.0` | Request timing pattern (`1.0` = Poisson, `< 1.0` = bursty, `> 1.0` = uniform) |
 
-### TTS Configuration
+## TTS Configuration
 
 | Parameter | Default | Description |
-|-----------|---------|-------------|
+|---|---:|---|
 | `--stream` | `False` | Use streaming synthesis (`/SynthesizeSpeechStream`) vs non-streaming (`/SynthesizeSpeech`) |
 | `--max_tokens` | `400` | Maximum tokens to synthesize (~8s audio at 50 tokens/s) |
 | `--voice-ids` | `["Olivia", "Remy"]` | Voice IDs to use (can specify multiple) |
 | `--model_id` | `None` | Model ID for TTS synthesis (optional) |
 | `--text_samples_file` | `scripts/tts_load_testing/text_samples.json` | File containing text samples |
 
-### Output & Analysis
+## Output & Analysis
 
 | Parameter | Default | Description |
-|-----------|---------|-------------|
+|---|---:|---|
 | `--benchmark_name` | `auto-generated` | Name for the benchmark run (affects output files) |
 | `--plot_only` | `False` | Only generate plots from existing results (skip testing) |
 | `--verbose` | `False` | Enable verbose output for debugging |
