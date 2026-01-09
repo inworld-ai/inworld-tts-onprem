@@ -1,10 +1,8 @@
 # TTS On-Prem
 
-All-in-one TTS container for on-premise deployment on NVIDIA H100 GPUs.
-
 ## Overview
 
-This container packages:
+Each container package:
 - **grpc-gateway** - HTTP REST API (matches Inworld cloud API format)
 - **w-proxy** - gRPC API proxy (routing and metrics)
 - **public-tts-service** - TTS service layer
