@@ -1,27 +1,11 @@
 # TTS On-Prem
 
-## Overview
+## Env Requirements
 
-Each container package:
-- **grpc-gateway** - HTTP REST API (matches Inworld cloud API format)
-- **w-proxy** - gRPC API proxy (routing and metrics)
-- **public-tts-service** - TTS service layer
-- **tts-normalization** - Text normalization service
-- **tts-v3-trtllm** - ML inference server (TensorRT-LLM, H100)
-
-**Architecture:** `HTTP/curl → grpc-gateway → w-proxy → public-tts-service → ML Server`
-
-## Source Images
-
-| Image | Tag | Comment |
-|-------|-----|---------|
-| `trt-speech-synthesizer-onprem` | `v1-h100` | ML inference server for H100 |
-| `tts-normalization` | `2ca1d1d3` | Text normalization service |
-| `public-tts-service` | `776a9dda` | TTS service layer (minimal profile) |
-| `w-proxy` | `21b0c10b` | gRPC API proxy |
-| `grpc-gateway` | `21b0c10b` | HTTP to gRPC transcoding |
-
-Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/backend/`
+- **NVIDIA 1xH100 SXM5 GPU Node**
+- NVIDIA Container Toolkit
+- Docker with GPU support
+- ~40GB disk space for the image download
 
 ## Quick Start
 
@@ -187,9 +171,25 @@ docker exec tts-onprem tail -f /var/log/tts-normalization.log
 docker exec tts-onprem tail -f /var/log/public-tts-service.log
 ```
 
-## Requirements
+## Image Overview
 
-- **NVIDIA H100 SXM5 GPU**
-- NVIDIA Container Toolkit
-- Docker with GPU support
-- ~40GB disk space for the image download
+Container package:
+- **grpc-gateway** - HTTP REST API (matches Inworld cloud API format)
+- **w-proxy** - gRPC API proxy (routing and metrics)
+- **public-tts-service** - TTS service layer
+- **tts-normalization** - Text normalization service
+- **tts-v3-trtllm** - ML inference server (TensorRT-LLM, H100)
+
+**Architecture:** `HTTP/curl → grpc-gateway → w-proxy → public-tts-service → ML Server`
+
+## Source Images
+
+| Image | Tag | Comment |
+|-------|-----|---------|
+| `trt-speech-synthesizer-onprem` | `v1-h100` | ML inference server for H100 |
+| `tts-normalization` | `2ca1d1d3` | Text normalization service |
+| `public-tts-service` | `776a9dda` | TTS service layer (minimal profile) |
+| `w-proxy` | `21b0c10b` | gRPC API proxy |
+| `grpc-gateway` | `21b0c10b` | HTTP to gRPC transcoding |
+
+Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/backend/`
