@@ -3,6 +3,7 @@
 ## Env Requirements
 
 - **NVIDIA 1xH100 SXM5 GPU Node**
+- Ubuntu 22.04.5 LTS
 - NVIDIA Container Toolkit
 - Docker with GPU support
 - ~40GB disk space for the image download
