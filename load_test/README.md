@@ -17,7 +17,7 @@ This tool simulates realistic TTS workloads by sending requests at specified rat
 # Basic load test with streaming
 pip install -e .
 
-python tts-load-test-simple.main \
+python load-test.main \
     --host http://localhost:8081 \
     --stream \
     --min-qps 1.0 \
@@ -66,7 +66,7 @@ python tts-load-test-simple.main \
 ### Streaming vs Non-Streaming Comparison
 ```bash
 # Non-streaming test
-./scripts/tts-load-test \
+python load-test.main \
     --host http://localhost:8081 \
     --min-qps 10.0 \
     --max-qps 50.0 \
@@ -75,7 +75,7 @@ python tts-load-test-simple.main \
     --benchmark_name non-streaming-test
 
 # Streaming test
-./scripts/tts-load-test \
+python load-test.main \
     --host http://localhost:8081 \
     --stream \
     --min-qps 10.0 \
