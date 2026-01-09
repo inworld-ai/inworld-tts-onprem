@@ -1,5 +1,5 @@
 [project]
-name = "tts-load-test-simple"
+name = "load-test"
 dynamic = ["version"]
 description = "Add your description here"
 readme = "README.md"
@@ -20,23 +20,23 @@ dev = [
 
 # BELOW ARE REQUIRED FOR PACKAGES
 [tool.hatch.build.targets.wheel]
-packages = ["tts_load_test"]
+packages = ["load_test"]
 
 # Include JSON data files in the package
 [tool.hatch.build.targets.wheel.sources]
-"tts_load_test" = "tts_load_test"
+"load_test" = "load_test"
 
 [tool.hatch.build]
 include = [
-    "tts_load_test/*.py",
-    "tts_load_test/*.json",
+    "load_test/*.py",
+    "load_test/*.json",
 ]
 
 [tool.uv.sources]
 tools = { workspace = true }
 
 [tool.hatch.version]
-path = "tts_load_test/__init__.py"
+path = "load_test/__init__.py"
 
 [build-system]
 requires = ["hatchling"]
