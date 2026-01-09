@@ -1,4 +1,12 @@
-# TTS On-Prem
+<div align="center">
+
+![Inworld Logo](https://github.com/inworld-ai/inworld-tts-onprem/blob/main/assets/cover.jpg?raw=true)
+
+<div align="left">
+
+# TTS _On-Premise_
+
+</div>
 
 ## Env Requirements
 
