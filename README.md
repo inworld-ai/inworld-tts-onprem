@@ -197,4 +197,6 @@ Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/backend/`
 
 ## Benchmarking
 
-We provide a comprehensize load-test facility and reference benchmark results. Follow up tts-load-test-simple/README.md#quick-start to get the benchmark results for your deployment and compare with REF-BENCHMARK.md result.
+https://github.com/inworld-ai/inworld-tts-onprem/blob/main/REF-BENCHMARK.md
+
+Follow up https://github.com/inworld-ai/inworld-tts-onprem/tree/main/tts-load-test-simple#quick-start to get the benchmark results for your deployment.
