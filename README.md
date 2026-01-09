@@ -163,31 +163,6 @@ Common voices: `Craig`, `Dennis`, `Alex`, `Sarah`, `Olivia`
 
 Use `inworld-tts-1.5-mini` as the model ID for all requests.
 
-## Build Locally
-
-```bash
-cd tts-serving
-
-docker build \
-  --build-arg ML_SERVER_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/backend/trt-speech-synthesizer-onprem:v1-h100 \
-  --build-arg TTS_NORMALIZATION_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/backend/tts-normalization:2ca1d1d3 \
-  --build-arg PUBLIC_TTS_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/backend/public-tts-service:776a9dda \
-  --build-arg W_PROXY_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/backend/w-proxy:21b0c10b \
-  --build-arg GRPC_GATEWAY_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/backend/grpc-gateway:21b0c10b \
-  -t tts-onprem-h100:latest \
-  -f onprem/Dockerfile .
-```
-
-**Note:** The `public-tts-service` image uses the standard pipeline build (not `-onprem` variant). The minimal profile is activated at runtime via `-Dspring.profiles.active=minimal` in the supervisord configuration.
-
-## Configuration Files
-
-| File | Purpose |
-|------|---------|
-| `onprem/Dockerfile` | Multi-stage build combining 5 images |
-| `onprem/configs/config.yaml` | ML server configuration |
-| `onprem/configs/supervisord.conf` | Process manager (all 5 services) |
-
 ## Logs
 
 View service logs inside the container:
