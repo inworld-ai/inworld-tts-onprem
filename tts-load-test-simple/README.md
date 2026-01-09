@@ -11,40 +11,20 @@ This tool simulates realistic TTS workloads by sending requests at specified rat
 - Request success rates
 - Server performance under different load conditions
 
-## Features
-
-- **Multiple Client Types**: Supports gRPC, Internal API, and Inworld API protocols
-- **Streaming & Non-Streaming**: Tests both real-time streaming and batch synthesis
-- **Configurable Load Patterns**: Control QPS, burstiness, and request distribution
-- **Accurate Timing**: Uses pausable timers to exclude client-side processing from server metrics
-- **Comprehensive Metrics**: Detailed latency percentiles and performance statistics
-- **Visualization**: Automatic plotting of results with customizable charts
-- **Async Architecture**: Efficient concurrent request handling
-
-
 ## Quick Start
 
 ```bash
 # Basic load test with streaming
-./scripts/tts-load-test \
-    --host http://tts-v3-turbo-torch.dev.oc.inworld.dev \
+pip install -e .
+
+python tts-load-test-simple.main \
+    --host http://localhost:8081 \
     --stream \
     --min-qps 1.0 \
-    --max-qps 10.0 \
+    --max-qps 7.0 \
     --qps-step 2.0 \
-    --number-of-samples 100
+    --number-of-samples 300
 
-# High-throughput production test
-./scripts/tts-load-test \
-    --host http://tts-v3-turbo-torch.prod.oc.inworld.dev \
-    --stream \
-    --min-qps 300.0 \
-    --max-qps 500.0 \
-    --qps-step 50.0 \
-    --number-of-samples 3000 \
-    --voice-ids Olivia \
-    --benchmark_name prod-high-load
-```
 
 ## Parameters
 
@@ -82,57 +62,11 @@ This tool simulates realistic TTS workloads by sending requests at specified rat
 | `--plot_only` | `False` | Only generate plots from existing results (skip testing) |
 | `--verbose` | `False` | Enable verbose output for debugging |
 
-## Server Endpoints
-
-The tool automatically appends the correct endpoint based on the `--stream` flag:
-
-### Development Servers
-- `http://tts-v3-turbo-torch.dev.oc.inworld.dev` - Dev 1B model
-- `http://tts-v3-hd-torch.dev.oc.inworld.dev` - Dev HD model
-
-### Production Servers
-- `http://tts-v3-turbo-torch.prod.oc.inworld.dev` - Prod 1B model
-- `http://tts-v3-hd-torch.prod.oc.inworld.dev` - Prod HD model
-
-### External APIs
-- `https://api.inworld.ai/v1/tts/synthesize-sync` - Inworld API (non-streaming)
-- `https://api.inworld.ai/v1/tts/synthesize` - Inworld API (streaming)
-
-## Usage Examples
-
-### Development Testing
-```bash
-# Light load test for development
-./scripts/tts-load-test \
-    --host http://tts-v3-turbo-torch.dev.oc.inworld.dev \
-    --min-qps 1.0 \
-    --max-qps 5.0 \
-    --qps-step 1.0 \
-    --number-of-samples 50 \
-    --benchmark_name dev-light-load
-```
-
-### Production Load Testing
-```bash
-# High QPS production test
-./scripts/tts-load-test \
-    --host http://tts-v3-turbo-torch.prod.oc.inworld.dev \
-    --stream \
-    --min-qps 100.0 \
-    --max-qps 600.0 \
-    --qps-step 100.0 \
-    --burstiness 0.8 \
-    --number-of-samples 2000 \
-    --text_samples_file tests-data/tts-load-test/text_samples_gt_30_words.json \
-    --voice-ids Olivia Remy Marcus \
-    --benchmark_name prod-stress-test
-```
-
 ### Streaming vs Non-Streaming Comparison
 ```bash
 # Non-streaming test
 ./scripts/tts-load-test \
-    --host http://tts-v3-turbo-torch.dev.oc.inworld.dev \
+    --host http://localhost:8081 \
     --min-qps 10.0 \
     --max-qps 50.0 \
     --qps-step 10.0 \
@@ -141,26 +75,13 @@ The tool automatically appends the correct endpoint based on the `--stream` flag
 
 # Streaming test
 ./scripts/tts-load-test \
-    --host http://tts-v3-turbo-torch.dev.oc.inworld.dev \
+    --host http://localhost:8081 \
     --stream \
     --min-qps 10.0 \
     --max-qps 50.0 \
     --qps-step 10.0 \
     --number-of-samples 500 \
     --benchmark_name streaming-test
-```
-
-### External API Testing
-```bash
-# Test Inworld API with authentication
-export INWORLD_API_KEY="your-api-key-here"
-./scripts/tts-load-test \
-    --host https://api.inworld.ai/v1/tts/synthesize-sync \
-    --min-qps 1.0 \
-    --max-qps 10.0 \
-    --number-of-samples 100 \
-    --voice-ids "en-US-Studio-O" \
-    --benchmark_name inworld-api-test
 ```
 
 ### Plot-Only Mode
