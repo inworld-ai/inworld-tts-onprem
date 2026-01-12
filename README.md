@@ -61,6 +61,8 @@ curl -X POST http://localhost:8081/tts/v1/voice \
   }'
 ```
 
+For full API documentation, see [Synthesize Speech](https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech).
+
 ### List Voices
 
 ```bash
