@@ -32,7 +32,7 @@ docker run -d \
   --name inworld-tts-onprem \
   -p 8081:8081 \
   -p 9030:9030 \
-  us-central1-a-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
+  us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 ```
 
 The ML model takes ~2-3 minutes to load. Check readiness:
