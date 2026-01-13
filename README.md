@@ -24,7 +24,7 @@
 gcloud auth configure-docker us-central1-docker.pkg.dev
 
 # Pull the image (replace <version> with latest release version, e.g., 1.0.0)
-docker pull us-central1-a-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
+docker pull us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 
 # Run the container
 docker run -d \
