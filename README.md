@@ -6,180 +6,94 @@
 
 </div>
 
-## Env Requirements
+## Requirements
 
-- **NVIDIA 1xH100 SXM5 GPU Node**
-- Ubuntu 22.04.5 LTS
-- NVIDIA Container Toolkit
-- Docker with GPU support
-- ~40GB disk space for the image download
+| Component | Requirement |
+|-----------|-------------|
+| **GPU** | NVIDIA H100 SXM5 (80GB) |
+| **RAM** | 64GB+ system memory |
+| **CPU** | 8+ cores |
+| **Disk** | 50GB free space |
+| **OS** | Ubuntu 22.04 LTS |
+| **Software** | Docker + NVIDIA Container Toolkit |
 
 ## Quick Start
-
-### Pull the image
 
 ```bash
 # Authenticate to GCP Artifact Registry
 gcloud auth configure-docker us-central1-docker.pkg.dev
 
-# Pull the on-prem image
-docker pull us-central1-docker.pkg.dev/inworld-ai-registry/backend/tts-onprem-h100:<commit-sha>
-```
+# Pull the image (replace <version> with latest release version, e.g., 1.0.0)
+docker pull us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 
-### Run the container
-
-```bash
+# Run the container
 docker run -d \
   --gpus all \
-  --name tts-onprem \
+  --name inworld-tts-onprem \
   -p 8081:8081 \
   -p 9030:9030 \
-  us-central1-docker.pkg.dev/inworld-ai-registry/backend/tts-onprem-h100:<commit-sha>
+  us-central1-a-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 ```
-
-### Wait for startup
 
 The ML model takes ~2-3 minutes to load. Check readiness:
 
 ```bash
-# Check container health
-docker ps | grep tts-onprem
-
-# Check all services are running
-docker exec tts-onprem supervisorctl -c /etc/supervisor/conf.d/supervisord.conf status
-
+docker exec inworld-tts-onprem supervisorctl -s unix:///tmp/supervisor.sock status
 ```
 
-## Ports
+## API
 
-| Port | Service | Protocol | Exposed | Access |
-|------|---------|----------|---------|--------|
-| **8081** | **grpc-gateway** | **HTTP** | **Yes** | **External API (recommended)** |
-| **9030** | **w-proxy** | **gRPC (h2c)** | **Yes** | **External API (gRPC clients)** |
-| 9090 | public-tts-service | gRPC | No | Internal only |
-| 50051 | ML Server | HTTP/gRPC | No | Internal only |
-| 50073 | Text Normalization | gRPC | No | Internal only |
+| Port | Protocol | Description |
+|------|----------|-------------|
+| **8081** | HTTP | REST API (recommended) |
+| **9030** | gRPC | For gRPC clients |
 
-**Recommended:** Use port 8081 (HTTP) for curl/REST access, matching the Inworld cloud API format.
-
-**Note:** Internal ports (9090, 50051, 50073) are not exposed by default. For debugging, you can manually expose them with `-p 9090:9090 -p 50051:50051`.
-
-## Test Commands
-
-### HTTP REST API (Recommended - matches Inworld cloud API)
-
-Basic TTS request via curl:
+### Test Request
 
 ```bash
 curl -X POST http://localhost:8081/tts/v1/voice \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Hello, this is a test of the on-premise TTS system.",
+    "text": "Hello, this is a test.",
     "voice_id": "Craig",
     "model_id": "inworld-tts-1.5-mini",
     "audio_config": {"audio_encoding": "LINEAR16", "sample_rate_hertz": 48000}
   }'
 ```
 
-Save audio to file:
+For full API documentation, see [Synthesize Speech](https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech).
 
-```bash
-curl -X POST http://localhost:8081/tts/v1/voice \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Hello world! This is a test of the TTS system.",
-    "voice_id": "Craig",
-    "model_id": "inworld-tts-1.5-mini",
-    "audio_config": {"audio_encoding": "LINEAR16", "sample_rate_hertz": 48000}
-  }' | python3 -c "import sys,json,base64; d=json.load(sys.stdin); open('output.wav','wb').write(base64.b64decode(d['audioContent'])); print(f'Saved: {len(d[\"audioContent\"])//1000}KB')"
-```
-
-List available voices:
+### List Voices
 
 ```bash
 curl http://localhost:8081/tts/v1/voices
 ```
-
-### gRPC API (Alternative)
-
-For gRPC clients, use port 9030 via w-proxy:
-
-```bash
-grpcurl -plaintext -d '{
-  "text": "Hello, this is a test of the on-premise TTS system.",
-  "voice_id": "Craig",
-  "model_id": "inworld-tts-1.5-mini",
-  "audio_config": {"audio_encoding": "LINEAR16", "sample_rate_hertz": 48000}
-}' localhost:9030 ai.inworld.tts.v1.TextToSpeech/SynthesizeSpeech
-```
-
-Note: gRPC reflection is not available through w-proxy. Use pre-compiled proto files or protosets.
-
-### Direct access (debugging only)
-
-For debugging, you can expose internal ports manually and access public-tts-service directly:
-
-```bash
-# Run with internal ports exposed for debugging
-docker run -d --gpus all --name tts-onprem \
-  -p 8081:8081 -p 9030:9030 -p 9090:9090 -p 50051:50051 \
-  us-central1-docker.pkg.dev/inworld-ai-registry/backend/tts-onprem-h100:<commit-sha>
-
-# Access public-tts-service directly
-grpcurl -plaintext -d '{
-  "text": "Direct test.",
-  "voice_id": "Craig",
-  "model_id": "inworld-tts-1.5-mini",
-  "audio_config": {"audio_encoding": "LINEAR16", "sample_rate_hertz": 48000}
-}' localhost:9090 ai.inworld.tts.v1.TextToSpeech/SynthesizeSpeech
-```
-
-## Available Voices
-
-List all available voices via HTTP:
-
-```bash
-curl http://localhost:8081/tts/v1/voices
-```
-
-Or via gRPC:
-
-```bash
-grpcurl -plaintext -d '{}' localhost:9030 ai.inworld.tts.v1.TextToSpeech/ListVoices
-```
-
-Common voices: `Craig`, `Dennis`, `Alex`, `Sarah`, `Olivia`
-
-## Model
-
-Use `inworld-tts-1.5-mini` as the model ID for all requests.
 
 ## Logs
 
-View service logs inside the container:
-
 ```bash
-# All services
-docker exec tts-onprem tail -f /var/log/supervisord.log
-
-# grpc-gateway (HTTP API)
-docker exec tts-onprem tail -f /var/log/grpc-gateway.log
-
-# w-proxy (gRPC proxy)
-docker exec tts-onprem tail -f /var/log/w-proxy.log
+# Supervisor (all services)
+docker exec inworld-tts-onprem tail -f /var/log/supervisord.log
 
 # ML server
-docker exec tts-onprem tail -f /var/log/tts-v3-trtllm.log
-
-# Normalization
-docker exec tts-onprem tail -f /var/log/tts-normalization.log
-
-# Public TTS API
-docker exec tts-onprem tail -f /var/log/public-tts-service.log
+docker exec inworld-tts-onprem tail -f /var/log/tts-v3-trtllm.log
 ```
+
+## Troubleshooting
+
+```bash
+# Restart container
+docker restart inworld-tts-onprem
+
+# Check service status
+docker exec inworld-tts-onprem supervisorctl -s unix:///tmp/supervisor.sock status
+
+# Export logs to folder
+d=tts-logs-$(date +%Y%m%d_%H%M%S) && mkdir $d && docker exec inworld-tts-onprem sh -c 'cd /var/log && tar cf - supervisord.log tts-normalization.log tts-v3-trtllm.log grpc-gateway.log w-proxy.log public-tts-service.log' | tar xf - -C $d && ls -lh $d
+```
+
+Still having issues? Contact Inworld support with the exported logs file.
 
 ## Benchmarking
 
-https://github.com/inworld-ai/inworld-tts-onprem/blob/main/REF-BENCHMARK.md
-
-Follow up https://github.com/inworld-ai/inworld-tts-onprem/tree/main/load_test#quick-start to get the benchmark results for your deployment.
+See [load_test](https://github.com/inworld-ai/inworld-tts-onprem/tree/main/load_test#quick-start) for performance testing.
