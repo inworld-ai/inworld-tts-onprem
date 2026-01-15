@@ -16,6 +16,14 @@
 | **Disk** | 50GB free space |
 | **OS** | Ubuntu 22.04 LTS |
 | **Software** | Docker + NVIDIA Container Toolkit |
+| **Software** | Google Cloud SDK (gcloud CLI) |
+
+## Authentication
+
+To pull images from GCP Artifact Registry, you need to configure google service account Docker authentication using gcloud CLI.
+
+For detailed instructions on authentication methods including service account configuration, see the official documentation:
+[Configure authentication to Artifact Registry for Docker](https://docs.cloud.google.com/artifact-registry/docs/docker/authentication#gcloud-helper)
 
 ## Quick Start
 
