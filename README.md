@@ -54,7 +54,7 @@ When the container is ready, the STATUS column will show `healthy`:
 
 ```
 CONTAINER ID   IMAGE                                  STATUS                   PORTS
-abc123def456   tts-1.5-mini-h100-onprem:1.0.0         Up 3 minutes (healthy)   0.0.0.0:8081->8081/tcp, 0.0.0.0:9030->9030/tcp
+abc123def456   tts-1.5-mini-h100-onprem:1.0.1         Up 3 minutes (healthy)   0.0.0.0:8081->8081/tcp, 0.0.0.0:9030->9030/tcp
 ```
 
 You can also check individual service status:
