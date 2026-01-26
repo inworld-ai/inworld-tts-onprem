@@ -32,7 +32,7 @@ For detailed instructions on authentication methods including service account co
 # Authenticate to GCP Artifact Registry
 gcloud auth configure-docker us-central1-docker.pkg.dev
 
-# Pull the image (replace <version> with latest release version, e.g., 1.0.0)
+# Pull the image (replace <version> with latest release version, e.g., 1.0.1)
 docker pull us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 
 # Run the container
