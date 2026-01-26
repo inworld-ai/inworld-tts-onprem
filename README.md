@@ -17,6 +17,7 @@
 | **OS** | Ubuntu 22.04 LTS |
 | **Software** | Docker + NVIDIA Container Toolkit |
 | **Software** | Google Cloud SDK (gcloud CLI) |
+| **CUDA** | 13.0+ |
 
 ## Authentication
 
@@ -43,7 +44,7 @@ docker run -d \
   us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 ```
 
-The ML model takes ~2-3 minutes to load. Check readiness:
+The ML model takes ~200 seconds to load. Check readiness:
 
 ```bash
 docker ps
