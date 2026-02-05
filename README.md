@@ -37,8 +37,8 @@ gcloud iam service-accounts create inworld-tts-onprem \
 
 # Create a key file for the service account
 gcloud iam service-accounts keys create inworld-tts-onprem-key.json \
-  --iam-account=inworld-tts-onprem@<CUSTOMER_GCP_PROJECT>.iam.gserviceaccount.com \
-  --project=<CUSTOMER_GCP_PROJECT>
+  --iam-account=inworld-tts-onprem@<YOUR_GCP_PROJECT>.iam.gserviceaccount.com \
+  --project=<YOUR_GCP_PROJECT>
 
 # Authenticate to GCP Artifact Registry
 gcloud auth configure-docker us-central1-docker.pkg.dev
