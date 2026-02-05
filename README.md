@@ -29,8 +29,23 @@ For detailed instructions on authentication methods including service account co
 ## Quick Start
 
 ```bash
+#Create GCP account
+gcloud iam service-accounts create inworld-tts-onprem \
+  --project=<YOUR_GCP_PROJECT> \
+  --display-name="Inworld TTS On-Prem" \
+  --description="Service account for Inworld TTS on-prem container"
+
+# Create a key file for the service account
+gcloud iam service-accounts keys create inworld-tts-onprem-key.json \
+  --iam-account=inworld-tts-onprem@<CUSTOMER_GCP_PROJECT>.iam.gserviceaccount.com \
+  --project=<CUSTOMER_GCP_PROJECT>
+
 # Authenticate to GCP Artifact Registry
 gcloud auth configure-docker us-central1-docker.pkg.dev
+
+# Activate the service account using the key file
+gcloud auth activate-service-account \
+  --key-file=inworld-tts-onprem-key.json
 
 # Pull the image (replace <version> with latest release version, e.g., 1.0.1)
 docker pull us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
