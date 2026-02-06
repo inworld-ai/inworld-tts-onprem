@@ -19,6 +19,9 @@
 | **Software** | Google Cloud SDK (gcloud CLI) |
 | **CUDA** | 13.0+ |
 
+## Latest Version
+**Version:** not-yet-released
+
 ## Authentication
 
 To pull images from GCP Artifact Registry, you need to configure google service account Docker authentication using gcloud CLI.
