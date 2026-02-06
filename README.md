@@ -20,7 +20,7 @@
 | **CUDA** | 13.0+ |
 
 ## Latest Version
-**Version:** not-yet-released
+**Version:** 20260206-97468b1d
 
 ## Authentication
 
