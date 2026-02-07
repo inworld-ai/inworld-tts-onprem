@@ -61,6 +61,8 @@ gcloud iam service-accounts keys create service-account-key.json \
 ### 2. Share the service account email with Inworld
 
 Send the service account email (e.g., `inworld-tts-onprem@<YOUR_GCP_PROJECT>.iam.gserviceaccount.com`) to your Inworld contact. Inworld will:
+- Grant **pull access** to the container registry
+- Grant permissions for **usage metering**
 - Provide your **Customer ID**
 
 ### 3. Authenticate to the container registry
@@ -248,6 +250,37 @@ docker exec inworld-tts-onprem supervisorctl -s unix:///tmp/supervisor.sock stat
 ```
 
 This creates a timestamped folder with all service logs. Share this with Inworld support when reporting issues.
+
+## Advanced: Manual Docker Run
+
+For users who prefer to run Docker directly without `run.sh`:
+
+```bash
+docker run -d \
+  --gpus all \
+  --name inworld-tts-onprem \
+  -p 8081:8081 \
+  -p 9030:9030 \
+  -e INWORLD_CUSTOMER_ID=<your-customer-id> \
+  -v $(pwd)/service-account-key.json:/app/gcp-credentials/service-account.json:ro \
+  us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
+```
+
+**Notes:**
+- Ensure your key file has 644 permissions: `chmod 644 service-account-key.json`
+- The container exposes port 8081 (HTTP) and 9030 (gRPC)
+- Use `docker ps` to check container health -- STATUS will show `healthy` when ready
+
+```bash
+# Stop and remove
+docker stop inworld-tts-onprem && docker rm inworld-tts-onprem
+
+# View logs
+docker logs inworld-tts-onprem
+
+# Check service status
+docker exec inworld-tts-onprem supervisorctl -s unix:///tmp/supervisor.sock status
+```
 
 ## Benchmarking
 
