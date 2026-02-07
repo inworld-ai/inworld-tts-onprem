@@ -6,7 +6,9 @@
 
 </div>
 
-## Requirements
+## Prerequisites
+
+### Hardware
 
 | Component | Requirement |
 |-----------|-------------|
@@ -15,70 +17,103 @@
 | **CPU** | 8+ cores |
 | **Disk** | 50GB free space |
 | **OS** | Ubuntu 22.04 LTS |
-| **Software** | Docker + NVIDIA Container Toolkit |
-| **Software** | Google Cloud SDK (gcloud CLI) |
-| **CUDA** | 13.0+ |
 
-## Latest Version
-**Version:** 20260206-97468b1d
+### Software
 
-## Authentication
+| Software | Installation |
+|----------|-------------|
+| **Docker** | [Install Docker Engine](https://docs.docker.com/engine/install/) |
+| **NVIDIA Container Toolkit** | [Install Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) |
+| **Google Cloud SDK** | [Install gcloud CLI](https://cloud.google.com/sdk/docs/install) |
 
-To pull images from GCP Artifact Registry, you need to configure google service account Docker authentication using gcloud CLI.
+Optionally, add your user to the `docker` group so you can run Docker without `sudo`:
+[Post-installation steps for Linux](https://docs.docker.com/engine/install/linux-postinstall/)
 
-For detailed instructions on authentication methods including service account configuration, see the official documentation:
-[Configure authentication to Artifact Registry for Docker](https://docs.cloud.google.com/artifact-registry/docs/docker/authentication#gcloud-helper)
+### Verification
+
+Verify that Docker can access your GPU:
+
+```bash
+docker run --rm --gpus all nvidia/cuda:13.0.0-base-ubuntu22.04 nvidia-smi
+```
+
+You should see your H100 GPU listed in the output.
 
 ## Quick Start
 
+### 1. Create a GCP service account
+
+Create a service account in your GCP project and generate a key file:
+
 ```bash
-#Create GCP account
+# Create the service account
 gcloud iam service-accounts create inworld-tts-onprem \
   --project=<YOUR_GCP_PROJECT> \
   --display-name="Inworld TTS On-Prem" \
   --description="Service account for Inworld TTS on-prem container"
 
-# Create a key file for the service account
-gcloud iam service-accounts keys create inworld-tts-onprem-key.json \
+# Create a key file
+gcloud iam service-accounts keys create service-account-key.json \
   --iam-account=inworld-tts-onprem@<YOUR_GCP_PROJECT>.iam.gserviceaccount.com \
   --project=<YOUR_GCP_PROJECT>
+```
 
-# Authenticate to GCP Artifact Registry
-gcloud auth configure-docker us-central1-docker.pkg.dev
+### 2. Share the service account email with Inworld
 
-# Activate the service account using the key file
+Send the service account email (e.g., `inworld-tts-onprem@<YOUR_GCP_PROJECT>.iam.gserviceaccount.com`) to your Inworld contact. Inworld will:
+- Provide your **Customer ID**
+
+### 3. Authenticate to the container registry
+
+```bash
 gcloud auth activate-service-account \
-  --key-file=inworld-tts-onprem-key.json
+  --key-file=service-account-key.json
 
-# Pull the image (replace <version> with latest release version, e.g., 1.0.1)
-docker pull us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
-
-# Run the container
-docker run -d \
-  --gpus all \
-  --name inworld-tts-onprem \
-  -p 8081:8081 \
-  -p 9030:9030 \
-  us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
+gcloud auth configure-docker us-central1-docker.pkg.dev
 ```
 
-The ML model takes ~200 seconds to load. Check readiness:
+For more authentication options, see [Configure authentication to Artifact Registry for Docker](https://docs.cloud.google.com/artifact-registry/docs/docker/authentication#gcloud-helper).
+
+### 4. Configure
 
 ```bash
-docker ps
+cp onprem.env.example onprem.env
 ```
 
-When the container is ready, the STATUS column will show `healthy`:
-
-```
-CONTAINER ID   IMAGE                                  STATUS                   PORTS
-abc123def456   tts-1.5-mini-h100-onprem:1.0.1         Up 3 minutes (healthy)   0.0.0.0:8081->8081/tcp, 0.0.0.0:9030->9030/tcp
-```
-
-You can also check individual service status:
+Edit `onprem.env` with your values:
 
 ```bash
-docker exec inworld-tts-onprem supervisorctl -s unix:///tmp/supervisor.sock status
+INWORLD_CUSTOMER_ID=<your-customer-id>
+TTS_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
+KEY_FILE=./service-account-key.json
+```
+
+### 5. Start
+
+```bash
+./run.sh
+```
+
+The script will:
+1. Check prerequisites (Docker, GPU, NVIDIA Container Toolkit)
+2. Validate your configuration
+3. Fix key file permissions if needed
+4. Pull the Docker image
+5. Start the container
+6. Wait for services to be ready (~3 minutes)
+
+> **Note:** The ML model takes approximately 3 minutes to load on first startup. This is normal.
+
+## Lifecycle Commands
+
+```bash
+./run.sh              # Start the container
+./run.sh stop         # Stop and remove the container
+./run.sh status       # Check container and service health
+./run.sh logs         # Show recent logs from all services
+./run.sh logs -f      # Tail all service logs live
+./run.sh logs export  # Export all logs to a timestamped folder
+./run.sh restart      # Restart the container
 ```
 
 ## API
@@ -88,20 +123,42 @@ docker exec inworld-tts-onprem supervisorctl -s unix:///tmp/supervisor.sock stat
 | **8081** | HTTP | REST API (recommended) |
 | **9030** | gRPC | For gRPC clients |
 
+### Health Check
+
+```bash
+curl http://localhost:8081/tts/v1/voices
+```
+
 ### Test Request
 
 ```bash
 curl -X POST http://localhost:8081/tts/v1/voice \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Hello, this is a test.",
+    "text": "Hello, this is a test of the on-premise TTS system.",
     "voice_id": "Craig",
     "model_id": "inworld-tts-1.5-mini",
     "audio_config": {"audio_encoding": "LINEAR16", "sample_rate_hertz": 48000}
   }'
 ```
 
-For full API documentation, see [Synthesize Speech](https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech).
+### Save Audio to File
+
+```bash
+curl -X POST http://localhost:8081/tts/v1/voice \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello world! This is a test of the TTS system.",
+    "voice_id": "Craig",
+    "model_id": "inworld-tts-1.5-mini",
+    "audio_config": {"audio_encoding": "LINEAR16", "sample_rate_hertz": 48000}
+  }' | python3 -c "
+import sys, json, base64
+d = json.load(sys.stdin)
+open('output.wav', 'wb').write(base64.b64decode(d['audioContent']))
+print(f'Saved: {len(d[\"audioContent\"])//1000}KB')
+"
+```
 
 ### List Voices
 
@@ -109,31 +166,89 @@ For full API documentation, see [Synthesize Speech](https://docs.inworld.ai/api-
 curl http://localhost:8081/tts/v1/voices
 ```
 
+### gRPC
+
+For gRPC clients, use port 9030:
+
+```bash
+grpcurl -plaintext -d '{
+  "text": "Hello, this is a test.",
+  "voice_id": "Craig",
+  "model_id": "inworld-tts-1.5-mini",
+  "audio_config": {"audio_encoding": "LINEAR16", "sample_rate_hertz": 48000}
+}' localhost:9030 ai.inworld.tts.v1.TextToSpeech/SynthesizeSpeech
+```
+
+For full API documentation, see [Synthesize Speech](https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech).
+
+## Available Images
+
+| Image | Model | GPU |
+|-------|-------|-----|
+| `tts-1.5-mini-h100-onprem` | 1B (mini) | H100 |
+| `tts-1.5-max-h100-onprem` | 8B (max) | H100 |
+
+Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/`
+
+## Configuration
+
+### onprem.env
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `INWORLD_CUSTOMER_ID` | Yes | Your customer ID |
+| `TTS_IMAGE` | Yes | Docker image URL (see [Available Images](#available-images)) |
+| `KEY_FILE` | Yes | Path to your GCP service account key file |
+
 ## Logs
 
 ```bash
-# Supervisor (all services)
-docker exec inworld-tts-onprem tail -f /var/log/supervisord.log
+# Show recent logs from all services (last 20 lines each)
+./run.sh logs
 
-# ML server
-docker exec inworld-tts-onprem tail -f /var/log/tts-v3-trtllm.log
+# Tail all service logs live
+./run.sh logs -f
+
+# Export all logs to a timestamped folder
+./run.sh logs export
+```
+
+Individual service logs:
+
+```bash
+docker exec inworld-tts-onprem tail -f /var/log/tts-v3-trtllm.log        # ML server
+docker exec inworld-tts-onprem tail -f /var/log/tts-normalization.log     # Text normalization
+docker exec inworld-tts-onprem tail -f /var/log/public-tts-service.log    # TTS service
+docker exec inworld-tts-onprem tail -f /var/log/grpc-gateway.log          # HTTP gateway
+docker exec inworld-tts-onprem tail -f /var/log/w-proxy.log               # gRPC proxy
+docker exec inworld-tts-onprem tail -f /var/log/supervisord.log           # Supervisor
 ```
 
 ## Troubleshooting
 
+| Issue | Solution |
+|-------|----------|
+| "INWORLD_CUSTOMER_ID is required" | Set `INWORLD_CUSTOMER_ID` in `onprem.env` |
+| "GCP credentials file not found" | Check that `KEY_FILE` in `onprem.env` points to a valid file |
+| "Credentials file is not readable" | Fix permissions on host: `chmod 644 <your-key-file>.json` |
+| "Topic not found" | Verify your `INWORLD_CUSTOMER_ID` matches the PubSub topic name |
+| "Permission denied for topic" | Ensure Inworld has granted your service account publish access |
+| Slow startup (~3 min) | Normal -- text processing grammars take time to initialize |
+
+### Check service status
+
 ```bash
-# Restart container
-docker restart inworld-tts-onprem
-
-# Check service status
 docker exec inworld-tts-onprem supervisorctl -s unix:///tmp/supervisor.sock status
-
-# Export logs to folder
-d=tts-logs-$(date +%Y%m%d_%H%M%S) && mkdir $d && docker exec inworld-tts-onprem sh -c 'cd /var/log && tar cf - supervisord.log tts-normalization.log tts-v3-trtllm.log grpc-gateway.log w-proxy.log public-tts-service.log' | tar xf - -C $d && ls -lh $d
 ```
 
-Still having issues? Contact Inworld support with the exported logs file.
+### Export logs for support
+
+```bash
+./run.sh logs export
+```
+
+This creates a timestamped folder with all service logs. Share this with Inworld support when reporting issues.
 
 ## Benchmarking
 
-See [load_test](https://github.com/inworld-ai/inworld-tts-onprem/tree/main/load_test#quick-start) for performance testing.
+See [load_test](https://github.com/inworld-ai/inworld-tts-onprem/tree/main/load_test#quick-start) for performance testing tools and instructions.
