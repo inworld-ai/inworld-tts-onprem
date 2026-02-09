@@ -87,7 +87,7 @@ Edit `onprem.env` with your values:
 
 ```bash
 INWORLD_CUSTOMER_ID=<your-customer-id>
-TTS_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:[<version>](https://github.com/inworld-ai/inworld-tts-onprem?tab=readme-ov-file#latest-version)
+TTS_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:[<version>]
 KEY_FILE=./service-account-key.json
 ```
 
