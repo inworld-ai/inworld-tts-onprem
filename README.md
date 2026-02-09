@@ -64,8 +64,6 @@ gcloud iam service-accounts keys create service-account-key.json \
 ### 2. Share the service account email with Inworld
 
 Send the service account email (e.g., `inworld-tts-onprem@<YOUR_GCP_PROJECT>.iam.gserviceaccount.com`) to your Inworld contact. Inworld will:
-- Grant **pull access** to the container registry
-- Grant permissions for **usage metering**
 - Provide your **Customer ID**
 
 ### 3. Authenticate to the container registry
