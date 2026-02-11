@@ -234,8 +234,8 @@ docker exec inworld-tts-onprem tail -f /var/log/supervisord.log           # Supe
 | "INWORLD_CUSTOMER_ID is required" | Set `INWORLD_CUSTOMER_ID` in `onprem.env` |
 | "GCP credentials file not found" | Check that `KEY_FILE` in `onprem.env` points to a valid file |
 | "Credentials file is not readable" | Fix permissions on host: `chmod 644 <your-key-file>.json` |
-| "Topic not found" | Verify your `INWORLD_CUSTOMER_ID` matches the PubSub topic name |
-| "Permission denied for topic" | Ensure Inworld has granted your service account publish access |
+| "Topic not found" | Verify your `INWORLD_CUSTOMER_ID` is correct. Contact Inworld support if the issue persists |
+| "Permission denied for topic" | Contact Inworld support to verify your service account has been granted the required access |
 | Slow startup (~3 min) | Normal -- text processing grammars take time to initialize |
 
 ### Check service status
