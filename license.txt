@@ -1,0 +1,19 @@
+LICENSE
+
+Inworld Model License
+This model, including any associated weights, parameters, code, documentation, or related materials (collectively, the “Model”), is licensed under one of the following, as applicable:
+1. Inworld Online Terms
+If no separate written agreement applies, the Model is licensed subject to the Inworld Terms of Service available at:
+https://www.inworld.ai/terms
+2. Signed Agreement Between the Parties
+If you have entered into a written agreement with Inworld that governs use of the Model (including a master services agreement, license agreement, or distribution agreement), that agreement controls and supersedes any online terms with respect to your use of the Model.
+By using, copying, modifying, hosting, deploying, or distributing the Model, you agree to be bound by the applicable governing terms described above.
+
+Third-Party Components
+The Model may include or depend on third-party software or model components that are subject to separate license terms.
+Without limitation, certain components are licensed under the Meta Llama License 3.0, available at:
+https://www.llama.com/llama3/license/
+Your use of such third-party components is also subject to such third-party license(s).
+
+No Additional Rights
+Except as expressly granted under the applicable governing terms, no rights or licenses—whether express, implied, or otherwise—are granted to the Model or any intellectual property of Inworld or its licensors.

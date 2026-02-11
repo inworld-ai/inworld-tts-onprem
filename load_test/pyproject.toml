@@ -1,0 +1,43 @@
+[project]
+name = "load-test"
+dynamic = ["version"]
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "matplotlib>=3.10.3",
+    "tabulate>=0.9.0",
+    "tqdm>=4.67.1",
+    "aiohttp>=3.8.0",
+    "pydantic>=2.0.0",
+    "scipy>=1.15.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "tools",
+]
+
+# BELOW ARE REQUIRED FOR PACKAGES
+[tool.hatch.build.targets.wheel]
+packages = ["load_test"]
+
+# Include JSON data files in the package
+[tool.hatch.build.targets.wheel.sources]
+"load_test" = "load_test"
+
+[tool.hatch.build]
+include = [
+    "load_test/*.py",
+    "load_test/*.json",
+]
+
+[tool.uv.sources]
+tools = { workspace = true }
+
+[tool.hatch.version]
+path = "load_test/__init__.py"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
