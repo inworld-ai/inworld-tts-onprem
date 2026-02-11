@@ -100,10 +100,9 @@ KEY_FILE=./service-account-key.json
 The script will:
 1. Check prerequisites (Docker, GPU, NVIDIA Container Toolkit)
 2. Validate your configuration
-3. Fix key file permissions if needed
-4. Pull the Docker image
-5. Start the container
-6. Wait for services to be ready (~3 minutes)
+3. Pull the Docker image
+4. Start the container
+5. Wait for services to be ready (~3 minutes)
 
 > **Note:** The ML model takes approximately 3 minutes to load on first startup. This is normal.
 
@@ -221,8 +220,7 @@ Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/`
 | Issue | Solution |
 |-------|----------|
 | "INWORLD_CUSTOMER_ID is required" | Set `INWORLD_CUSTOMER_ID` in `onprem.env` |
-| "GCP credentials file not found" | Check that `KEY_FILE` in `onprem.env` points to a valid file |
-| "Credentials file is not readable" | Fix permissions on host: `chmod 644 <your-key-file>.json` |
+| "GCP credentials not found" | Check that `KEY_FILE` in `onprem.env` points to a valid file |
 | "Topic not found" | Verify your `INWORLD_CUSTOMER_ID` is correct. Contact Inworld support if the issue persists |
 | "Permission denied for topic" | Contact Inworld support to verify your service account has been granted the required access |
 | Slow startup (~3 min) | Normal -- text processing grammars take time to initialize |
@@ -252,12 +250,11 @@ docker run -d \
   -p 8081:8081 \
   -p 9030:9030 \
   -e INWORLD_CUSTOMER_ID=<your-customer-id> \
-  -v $(pwd)/service-account-key.json:/app/gcp-credentials/service-account.json:ro \
+  -v $(pwd)/service-account-key.json:/app/gcp-credentials/.mounted-key.json:ro \
   us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 ```
 
 **Notes:**
-- Ensure your key file has 644 permissions: `chmod 644 service-account-key.json`
 - The container exposes port 8081 (HTTP) and 9030 (gRPC)
 - Use `docker ps` to check container health -- STATUS will show `healthy` when ready
 

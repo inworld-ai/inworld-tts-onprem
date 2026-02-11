@@ -189,16 +189,9 @@ if [ ! -f "$KEY_FILE" ]; then
     exit 1
 fi
 
-# Fix key file permissions (must be readable by container's non-root user)
-PERMS=$(stat -c '%a' "$KEY_FILE" 2>/dev/null || stat -f '%Lp' "$KEY_FILE" 2>/dev/null)
-if [ "$PERMS" != "644" ]; then
-    info "Fixing key file permissions (${PERMS} -> 644)..."
-    chmod 644 "$KEY_FILE"
-fi
-
 check "Customer ID: $INWORLD_CUSTOMER_ID"
 check "Image: $TTS_IMAGE"
-check "Key file: $KEY_FILE (permissions: 644)"
+check "Key file: $KEY_FILE"
 
 # =============================================================================
 # Check if container already exists
@@ -237,7 +230,7 @@ docker run -d \
     -p 8081:8081 \
     -p 9030:9030 \
     -e INWORLD_CUSTOMER_ID="$INWORLD_CUSTOMER_ID" \
-    -v "$(realpath "$KEY_FILE"):/app/gcp-credentials/service-account.json:ro" \
+    -v "$(realpath "$KEY_FILE"):/app/gcp-credentials/.mounted-key.json:ro" \
     "$TTS_IMAGE" >/dev/null
 
 ok "Container started."
