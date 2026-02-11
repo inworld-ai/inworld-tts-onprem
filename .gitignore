@@ -1,0 +1,35 @@
+# Environment and secrets
+onprem.env
+service-account-key.json
+*-credentials*.json
+*.pem
+*.key
+
+# Generated audio files
+*.wav
+*.mp3
+*.ogg
+*.flac
+
+# Benchmark results
+benchmark_result/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
