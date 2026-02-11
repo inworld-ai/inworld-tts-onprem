@@ -216,17 +216,6 @@ Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/`
 ./run.sh logs export
 ```
 
-Individual service logs:
-
-```bash
-docker exec inworld-tts-onprem tail -f /var/log/tts-v3-trtllm.log        # ML server
-docker exec inworld-tts-onprem tail -f /var/log/tts-normalization.log     # Text normalization
-docker exec inworld-tts-onprem tail -f /var/log/public-tts-service.log    # TTS service
-docker exec inworld-tts-onprem tail -f /var/log/grpc-gateway.log          # HTTP gateway
-docker exec inworld-tts-onprem tail -f /var/log/w-proxy.log               # gRPC proxy
-docker exec inworld-tts-onprem tail -f /var/log/supervisord.log           # Supervisor
-```
-
 ## Troubleshooting
 
 | Issue | Solution |
