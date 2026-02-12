@@ -67,14 +67,14 @@ import click
 import numpy as np
 from tqdm.asyncio import tqdm
 
-from tts_load_test import (
+from . import (
     clients,
     content,
     data_types,
     results_plot,
     results_printer,
 )
-from tts_load_test.timer import PausableTimer
+from .timer import PausableTimer
 
 # Default text samples file (bundled with the package)
 _DEFAULT_TEXT_SAMPLES_FILE = os.path.join(
@@ -472,8 +472,8 @@ async def collect_results_for_qps(
 )
 @click.option(
     "--model-id",
-    default="inworld-tts-1",
-    help="Model ID to use for TTS synthesis. If not provided, we will not set model_id in the request.",
+    required=True,
+    help="Model ID to use for TTS synthesis (e.g. inworld-tts-1.5-mini, inworld-tts-1.5-max).",
 )
 @click.option(
     "--mode",
