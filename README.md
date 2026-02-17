@@ -40,7 +40,7 @@ docker run --rm --gpus all nvidia/cuda:13.0.0-base-ubuntu22.04 nvidia-smi
 You should see your H100 GPU listed in the output.
 
 ## Latest Version
-**Version:** 20260211-dd78c650
+**Version:** 20260217-6ab68e66
 
 ## Quick Start
 
