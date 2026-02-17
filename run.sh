@@ -57,7 +57,7 @@ case "${1:-}" in
         exit 0
         ;;
     logs)
-        LOG_FILES="supervisord.log tts-v3-trtllm.log tts-normalization.log public-tts-service.log w-proxy.log grpc-gateway.log"
+        LOG_FILES="supervisord.log tts-v3-trtllm.log tts-normalization.log forced-alignment.log public-tts-service.log w-proxy.log grpc-gateway.log"
         if [ "${2:-}" = "export" ]; then
             DIR="tts-logs-$(date +%Y%m%d_%H%M%S)"
             mkdir -p "$DIR"
@@ -69,6 +69,7 @@ case "${1:-}" in
                 /var/log/supervisord.log \
                 /var/log/tts-v3-trtllm.log \
                 /var/log/tts-normalization.log \
+                /var/log/forced-alignment.log \
                 /var/log/public-tts-service.log \
                 /var/log/w-proxy.log \
                 /var/log/grpc-gateway.log
@@ -224,6 +225,7 @@ fi
 echo ""
 info "Starting container..."
 
+# shellcheck disable=SC2086
 docker run -d \
     --gpus all \
     --name "$CONTAINER_NAME" \
@@ -231,6 +233,7 @@ docker run -d \
     -p 9030:9030 \
     -e INWORLD_CUSTOMER_ID="$INWORLD_CUSTOMER_ID" \
     -v "$(realpath "$KEY_FILE"):/app/gcp-credentials/.mounted-key.json:ro" \
+    ${DOCKER_EXTRA_ARGS:-} \
     "$TTS_IMAGE" >/dev/null
 
 ok "Container started."
