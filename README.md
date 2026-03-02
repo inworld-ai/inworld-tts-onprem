@@ -17,6 +17,8 @@
 | **CPU** | 8+ cores |
 | **Disk** | 50GB free space |
 | **OS** | Ubuntu 22.04 LTS |
+| **CUDA** | 13.0 |
+| **NVIDIA Driver** | 580.95.05+ |
 
 ### Software
 
