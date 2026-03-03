@@ -10,6 +10,7 @@
 #   ./run.sh logs -f          Tail all service logs live
 #   ./run.sh logs export      Export all logs to a timestamped folder
 #   ./run.sh restart          Restart the container
+#   ./run.sh diagnose         Print system diagnostics (GPU, drivers, OS, etc.)
 #
 # All configuration is read from onprem.env. CLI flags override env file values:
 #   ./run.sh --customer-id <id> --image <url> --key <path>
@@ -37,7 +38,7 @@ err()   { echo -e "${RED}[error]${NC} $*"; }
 check() { echo -e "${GREEN}[check]${NC} $*"; }
 
 # =============================================================================
-# Subcommands: stop, status, logs, restart
+# Subcommands: stop, status, logs, restart, diagnose
 # =============================================================================
 case "${1:-}" in
     stop)
@@ -88,6 +89,123 @@ case "${1:-}" in
         ok "Container restarted."
         exit 0
         ;;
+    diagnose)
+        echo "========================================"
+        echo " Inworld TTS On-Prem Diagnostics"
+        echo "========================================"
+        echo ""
+
+        # -- Kernel & OS --
+        info "Kernel & OS"
+        echo "  Kernel:   $(uname -r)"
+        echo "  Arch:     $(uname -m)"
+        if [ -f /etc/os-release ]; then
+            OS_NAME=$(. /etc/os-release && echo "${NAME:-unknown}")
+            OS_VERSION=$(. /etc/os-release && echo "${VERSION:-unknown}")
+            echo "  OS:       $OS_NAME $OS_VERSION"
+        elif command -v lsb_release &>/dev/null; then
+            echo "  OS:       $(lsb_release -ds 2>/dev/null)"
+        else
+            echo "  OS:       $(uname -s) (no /etc/os-release)"
+        fi
+        echo ""
+
+        # -- CPU --
+        info "CPU"
+        if command -v lscpu &>/dev/null; then
+            CPU_MODEL=$(lscpu | grep -m1 'Model name' | sed 's/.*:\s*//')
+            CPU_CORES=$(lscpu | grep -m1 '^CPU(s):' | sed 's/.*:\s*//')
+            echo "  Model:    $CPU_MODEL"
+            echo "  CPUs:     $CPU_CORES"
+        else
+            echo "  $(uname -p)"
+        fi
+        echo ""
+
+        # -- Memory --
+        info "Memory"
+        if command -v free &>/dev/null; then
+            free -h | awk '/^Mem:/ {printf "  Total: %s   Used: %s   Available: %s\n", $2, $3, $7}'
+        else
+            warn "  free command not available"
+        fi
+        echo ""
+
+        # -- Disk --
+        info "Disk"
+        echo "  Root partition:"
+        df -h / 2>/dev/null | awk 'NR==2 {printf "    Size: %s   Used: %s   Avail: %s   Use%%: %s\n", $2, $3, $4, $5}'
+        DOCKER_ROOT=$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo "/var/lib/docker")
+        if [ "$DOCKER_ROOT" != "/" ]; then
+            echo "  Docker partition ($DOCKER_ROOT):"
+            df -h "$DOCKER_ROOT" 2>/dev/null | awk 'NR==2 {printf "    Size: %s   Used: %s   Avail: %s   Use%%: %s\n", $2, $3, $4, $5}'
+        fi
+        echo ""
+
+        # -- NVIDIA GPU & Drivers --
+        info "NVIDIA GPU & Drivers"
+        if command -v nvidia-smi &>/dev/null; then
+            DRIVER_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1)
+            CUDA_VER=$(nvidia-smi 2>/dev/null | grep -oP 'CUDA Version:\s*\K[0-9.]+' | head -1)
+            GPU_COUNT=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | wc -l)
+            KMOD_VER=$(cat /proc/driver/nvidia/version 2>/dev/null | grep -oP 'Kernel Module\s+\K[0-9.]+' || modinfo nvidia 2>/dev/null | awk '/^version:/{print $2}' || echo "unknown")
+            echo "  Driver:   $DRIVER_VER"
+            echo "  Kernel:   $KMOD_VER"
+            echo "  CUDA:     ${CUDA_VER:-unknown}"
+            echo "  GPU(s):   $GPU_COUNT"
+            echo ""
+            nvidia-smi --query-gpu=index,name,memory.total,memory.used,temperature.gpu,utilization.gpu \
+                --format=csv,noheader 2>/dev/null | while IFS=',' read -r IDX NAME MEM_TOT MEM_USED TEMP UTIL; do
+                echo "  [$IDX] $NAME"
+                echo "        Memory: $MEM_USED /$MEM_TOT   Temp: ${TEMP}C   Util: $UTIL"
+            done
+        else
+            err "nvidia-smi not found -- cannot query GPU or driver info"
+        fi
+        echo ""
+
+        # -- Container Runtime --
+        info "Container Runtime"
+        if command -v docker &>/dev/null; then
+            echo "  $(docker --version)"
+            DOCKER_SERVER_VER=$(docker info --format '{{.ServerVersion}}' 2>/dev/null || echo "unknown")
+            STORAGE_DRIVER=$(docker info --format '{{.Driver}}' 2>/dev/null || echo "unknown")
+            CGROUP_DRIVER=$(docker info --format '{{.CgroupDriver}}' 2>/dev/null || echo "unknown")
+            echo "  Server:   $DOCKER_SERVER_VER"
+            echo "  Storage:  $STORAGE_DRIVER"
+            echo "  Cgroup:   $CGROUP_DRIVER"
+            if docker info 2>/dev/null | grep -q "nvidia"; then
+                ok "  NVIDIA runtime: detected"
+            else
+                warn "  NVIDIA runtime: not detected"
+            fi
+        else
+            warn "Docker is not installed"
+        fi
+        if command -v containerd &>/dev/null; then
+            echo "  containerd: $(containerd --version 2>/dev/null | awk '{print $3}')"
+        fi
+        if command -v crio &>/dev/null; then
+            echo "  CRI-O:    $(crio --version 2>/dev/null | awk '/^crio version/{print $3}')"
+        fi
+        echo ""
+
+        # -- NVIDIA Container Toolkit --
+        info "NVIDIA Container Toolkit"
+        if command -v nvidia-container-cli &>/dev/null; then
+            echo "  $(nvidia-container-cli --version 2>/dev/null | head -1)"
+        elif command -v nvidia-ctk &>/dev/null; then
+            echo "  $(nvidia-ctk --version 2>/dev/null | head -1)"
+        else
+            warn "nvidia-container-cli / nvidia-ctk not found in PATH"
+        fi
+        echo ""
+
+        echo "========================================"
+        echo " End of diagnostics"
+        echo "========================================"
+        exit 0
+        ;;
     -*)
         # Flag -- fall through to start logic
         ;;
@@ -96,7 +214,7 @@ case "${1:-}" in
         ;;
     *)
         err "Unknown command: $1"
-        echo "Usage: $0 [start|stop|status|logs|restart]"
+        echo "Usage: $0 [start|stop|status|logs|restart|diagnose]"
         exit 1
         ;;
 esac

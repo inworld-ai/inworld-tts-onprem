@@ -118,6 +118,7 @@ The script will:
 ./run.sh logs -f      # Tail all service logs live
 ./run.sh logs export  # Export all logs to a timestamped folder
 ./run.sh restart      # Restart the container
+./run.sh diagnose     # Print system diagnostics (GPU, drivers, OS, etc.)
 ```
 
 ## API
@@ -226,6 +227,14 @@ Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/`
 | "Topic not found" | Verify your `INWORLD_CUSTOMER_ID` is correct. Contact Inworld support if the issue persists |
 | "Permission denied for topic" | Contact Inworld support to verify your service account has been granted the required access |
 | Slow startup (~3 min) | Normal -- text processing grammars take time to initialize |
+
+### Run diagnostics
+
+```bash
+./run.sh diagnose
+```
+
+This prints kernel, OS, CPU, memory, disk, NVIDIA driver/CUDA versions, GPU details, Docker info, and NVIDIA Container Toolkit status. Share the output with Inworld support when reporting issues.
 
 ### Check service status
 
