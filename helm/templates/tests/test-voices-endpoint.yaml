@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "inworld-tts.fullname" . }}-test-voices
+  labels:
+    {{- include "inworld-tts.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.6.0
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          MAX_RETRIES=12
+          SLEEP_SECONDS=10
+          URL="http://{{ include "inworld-tts.fullname" . }}:{{ .Values.service.httpPort }}/tts/v1/voices"
+
+          echo "Testing $URL (up to ${MAX_RETRIES} retries, ${SLEEP_SECONDS}s apart)"
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || true)
+            echo "Attempt $i/${MAX_RETRIES}: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Success: /tts/v1/voices returned 200"
+              exit 0
+            fi
+            [ "$i" -lt "$MAX_RETRIES" ] && sleep $SLEEP_SECONDS
+          done
+
+          echo "Failed: /tts/v1/voices did not return 200 after ${MAX_RETRIES} attempts"
+          exit 1

@@ -1,0 +1,24 @@
+Inworld TTS On-Prem deployed successfully.
+
+The container loads TensorRT models on startup (~6 minutes). The pod will show
+0/1 Running until the startup probe passes — this is expected.
+
+Watch startup progress:
+  kubectl logs -f -l app.kubernetes.io/name={{ include "inworld-tts.name" . }}
+
+Wait for ready, then run the built-in connectivity test:
+  kubectl wait --for=condition=Ready pod \
+    -l app.kubernetes.io/name={{ include "inworld-tts.name" . }} \
+    --timeout=10m
+  helm test {{ .Release.Name }}
+
+Access the service:
+  kubectl port-forward svc/{{ include "inworld-tts.fullname" . }} 8081:8081 9030:9030
+  curl http://localhost:8081/tts/v1/voices     # REST
+  # gRPC endpoint: localhost:9030 (plaintext h2c)
+
+{{- if gt (int .Values.replicaCount) 1 }}
+
+WARNING: replicaCount={{ .Values.replicaCount }} requires one H100 GPU per replica.
+Pods exceeding available GPUs will remain Pending indefinitely.
+{{- end }}

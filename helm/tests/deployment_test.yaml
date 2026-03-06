@@ -1,0 +1,207 @@
+suite: deployment tests
+templates:
+  - deployment.yaml
+  - secret.yaml
+
+tests:
+  # ---------------------------------------------------------------------------
+  # Image reference
+  # ---------------------------------------------------------------------------
+  - it: should build the correct image reference from registry/repository/tag
+    set:
+      config.customerId: test-customer
+      image.tag: 20240301-ab12cd34
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        equal:
+          path: spec.template.spec.containers[0].image
+          value: us-central1-docker.pkg.dev/inworld-ai-registry/backend/tts-1.5-mini-h100-onprem:20240301-ab12cd34
+
+  # ---------------------------------------------------------------------------
+  # INWORLD_CUSTOMER_ID env var
+  # ---------------------------------------------------------------------------
+  - it: should set INWORLD_CUSTOMER_ID from config.customerId
+    set:
+      config.customerId: onprem-metering-my-company
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_CUSTOMER_ID
+            value: onprem-metering-my-company
+
+  # ---------------------------------------------------------------------------
+  # GPU resources
+  # ---------------------------------------------------------------------------
+  - it: should request and limit exactly 1 GPU
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        equal:
+          path: spec.template.spec.containers[0].resources.limits["nvidia.com/gpu"]
+          value: "1"
+      - template: deployment.yaml
+        equal:
+          path: spec.template.spec.containers[0].resources.requests["nvidia.com/gpu"]
+          value: "1"
+
+  # ---------------------------------------------------------------------------
+  # Secret created when inlineKey is set
+  # ---------------------------------------------------------------------------
+  - it: should create a Secret when credentials.inlineKey is set
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: secret.yaml
+        isKind:
+          of: Secret
+
+  # ---------------------------------------------------------------------------
+  # Secret NOT created when existingSecret is set
+  # ---------------------------------------------------------------------------
+  - it: should not create a Secret when credentials.existingSecret is set
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.existingSecret: my-gcp-creds
+    asserts:
+      - template: secret.yaml
+        hasDocuments:
+          count: 0
+
+  # ---------------------------------------------------------------------------
+  # Credential volumeMount uses subPath
+  # ---------------------------------------------------------------------------
+  - it: should mount credentials file via subPath
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gcp-credentials
+            mountPath: /app/gcp-credentials/.mounted-key.json
+            subPath: key.json
+            readOnly: true
+
+  # ---------------------------------------------------------------------------
+  # startupProbe failureThreshold
+  # ---------------------------------------------------------------------------
+  - it: should set startupProbe.failureThreshold to 40
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        equal:
+          path: spec.template.spec.containers[0].startupProbe.failureThreshold
+          value: 40
+
+  # ---------------------------------------------------------------------------
+  # required template: customerId empty → fail
+  # ---------------------------------------------------------------------------
+  - it: should fail when config.customerId is empty
+    set:
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        failedTemplate:
+          errorMessage: "config.customerId is required"
+
+  # ---------------------------------------------------------------------------
+  # required template: neither credential option set → fail
+  # ---------------------------------------------------------------------------
+  - it: should fail when neither inlineKey nor existingSecret is set
+    set:
+      config.customerId: test
+      image.tag: test
+    asserts:
+      - template: deployment.yaml
+        failedTemplate:
+          errorMessage: "Either credentials.inlineKey or credentials.existingSecret must be set"
+
+---
+suite: service tests
+templates:
+  - service.yaml
+
+tests:
+  # ---------------------------------------------------------------------------
+  # Service ports
+  # ---------------------------------------------------------------------------
+  - it: should expose http port 8081 and grpc port 9030
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: http
+            port: 8081
+            targetPort: http
+            protocol: TCP
+      - contains:
+          path: spec.ports
+          content:
+            name: grpc
+            port: 9030
+            targetPort: grpc
+            protocol: TCP
+            appProtocol: kubernetes.io/h2c
+
+  # ---------------------------------------------------------------------------
+  # Service port overrides
+  # ---------------------------------------------------------------------------
+  - it: should use overridden service ports
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+      service.httpPort: 8181
+      service.grpcPort: 9131
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: http
+            port: 8181
+            targetPort: http
+            protocol: TCP
+      - contains:
+          path: spec.ports
+          content:
+            name: grpc
+            port: 9131
+            targetPort: grpc
+            protocol: TCP
+            appProtocol: kubernetes.io/h2c
+
+  # ---------------------------------------------------------------------------
+  # Service type override
+  # ---------------------------------------------------------------------------
+  - it: should respect service.type override
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+      service.type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
