@@ -1,0 +1,14 @@
+apiVersion: v2
+name: inworld-tts
+description: Inworld TTS On-Prem — single-container deployment with GPU scheduling and GCP credential mounting
+type: application
+version: 0.1.0
+appVersion: "1.5"
+keywords:
+  - tts
+  - inworld
+  - gpu
+  - onprem
+home: https://inworld.ai
+maintainers:
+  - name: Inworld AI

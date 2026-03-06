@@ -1,0 +1,60 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  registry: us-central1-docker.pkg.dev
+  repository: inworld-ai-registry/backend/tts-1.5-mini-h100-onprem
+  # tag is required — e.g. 20240301-ab12cd34
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+replicaCount: 1
+
+config:
+  # Required: maps to INWORLD_CUSTOMER_ID env var (drives PubSub metering topic)
+  customerId: ""
+
+credentials:
+  # Option A: chart creates a Secret from the inline key JSON (use --set-file)
+  inlineKey: ""
+  # Option B: reference a pre-existing Secret (takes precedence over inlineKey)
+  existingSecret: ""
+  existingSecretKey: key.json
+
+service:
+  type: ClusterIP
+  httpPort: 8081
+  grpcPort: 9030
+
+resources:
+  limits:
+    nvidia.com/gpu: "1"
+    memory: 128Gi
+    cpu: "20"
+  requests:
+    nvidia.com/gpu: "1"
+    memory: 128Gi
+    cpu: "20"
+
+serviceAccount:
+  # Set to true to create a ServiceAccount
+  create: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+# Security context: runAsNonRoot disabled because entrypoint starts as root,
+# chowns credential file, then drops to appuser via gosu.
+podSecurityContext: {}
+
+securityContext: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

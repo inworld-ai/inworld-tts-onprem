@@ -1,0 +1,107 @@
+{{- $credSecret := include "inworld-tts.credentialSecretName" . -}}
+{{- if and (not .Values.credentials.existingSecret) (not .Values.credentials.inlineKey) -}}
+{{- fail "Either credentials.inlineKey or credentials.existingSecret must be set" -}}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "inworld-tts.fullname" . }}
+  labels:
+    {{- include "inworld-tts.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  # Recreate instead of RollingUpdate: with a single GPU, two pods cannot
+  # coexist during a rollout — the second would be stuck Pending indefinitely.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "inworld-tts.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "inworld-tts.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "inworld-tts.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: tts
+          image: {{ include "inworld-tts.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: INWORLD_CUSTOMER_ID
+              value: {{ required "config.customerId is required" .Values.config.customerId | quote }}
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+            - name: grpc
+              containerPort: 9030
+              protocol: TCP
+          # startupProbe gates liveness/readiness until the ~6-min TensorRT model load completes.
+          # 40 failures × 10s period = 400s maximum startup window.
+          startupProbe:
+            httpGet:
+              path: /tts/v1/voices
+              port: http
+            periodSeconds: 10
+            failureThreshold: 40
+            successThreshold: 1
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /tts/v1/voices
+              port: http
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /tts/v1/voices
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: gcp-credentials
+              # subPath so the entrypoint sees a file, not a directory
+              mountPath: /app/gcp-credentials/.mounted-key.json
+              subPath: {{ .Values.credentials.existingSecretKey }}
+              readOnly: true
+      volumes:
+        - name: gcp-credentials
+          secret:
+            secretName: {{ $credSecret }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
