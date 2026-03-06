@@ -59,10 +59,12 @@ Choose Option A (simplest) or Option B (recommended for production) below.
 
 ## Installation
 
+> All commands below should be run from the **repository root** (`inworld-tts-onprem/`).
+
 ### Option A — Chart manages the Secret (simplest)
 
 ```bash
-helm install inworld-tts ./inworld-tts \
+helm install inworld-tts ./helm \
   --set image.tag=20240301-ab12cd34 \
   --set config.customerId=onprem-metering-acme-corp \
   --set-file credentials.inlineKey=./sa-key.json
@@ -84,7 +86,7 @@ kubectl create secret generic inworld-tts-gcp-creds \
 Then install the chart referencing that Secret:
 
 ```bash
-helm install inworld-tts ./inworld-tts \
+helm install inworld-tts ./helm \
   --set image.tag=20240301-ab12cd34 \
   --set config.customerId=onprem-metering-acme-corp \
   --set credentials.existingSecret=inworld-tts-gcp-creds
@@ -192,7 +194,7 @@ curl http://localhost:8081/tts/v1/voices
 ## Upgrading
 
 ```bash
-helm upgrade inworld-tts ./inworld-tts \
+helm upgrade inworld-tts ./helm \
   --reuse-values \
   --set image.tag=20240401-cd56ef78
 ```
