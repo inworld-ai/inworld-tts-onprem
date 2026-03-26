@@ -1,6 +1,6 @@
 {{- $credSecret := include "inworld-tts.credentialSecretName" . -}}
-{{- if and (not .Values.credentials.existingSecret) (not .Values.credentials.inlineKey) -}}
-{{- fail "Either credentials.inlineKey or credentials.existingSecret must be set" -}}
+{{- if and (not .Values.config.apiKey) (not .Values.credentials.existingSecret) (not .Values.credentials.inlineKey) -}}
+{{- fail "GCP credentials (credentials.inlineKey or credentials.existingSecret) are required when config.apiKey is not set" -}}
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
@@ -48,8 +48,21 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
+            {{- if .Values.config.apiKey }}
+            - name: INWORLD_API_KEY
+              value: {{ .Values.config.apiKey | quote }}
+            - name: INWORLD_API_ENDPOINT
+              value: {{ .Values.config.apiEndpoint | quote }}
+            - name: INWORLD_METERING_MODE
+              value: "grpc"
+            {{- end }}
+            {{- if .Values.config.customerId }}
             - name: INWORLD_CUSTOMER_ID
-              value: {{ required "config.customerId is required" .Values.config.customerId | quote }}
+              value: {{ .Values.config.customerId | quote }}
+            {{- end }}
+            {{- if not (or .Values.config.apiKey .Values.config.customerId) }}
+            {{- fail "Either config.apiKey or config.customerId must be set" }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8081
@@ -83,16 +96,20 @@ spec:
             timeoutSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if or .Values.credentials.inlineKey .Values.credentials.existingSecret }}
           volumeMounts:
             - name: gcp-credentials
               # subPath so the entrypoint sees a file, not a directory
               mountPath: /app/gcp-credentials/.mounted-key.json
               subPath: {{ .Values.credentials.existingSecretKey }}
               readOnly: true
+          {{- end }}
+      {{- if or .Values.credentials.inlineKey .Values.credentials.existingSecret }}
       volumes:
         - name: gcp-credentials
           secret:
             secretName: {{ $credSecret }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
