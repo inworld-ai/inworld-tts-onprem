@@ -13,21 +13,21 @@ imagePullSecrets: []
 replicaCount: 1
 
 config:
-  # --- Mode A: API key metering (recommended for new deployments) ---
+  # --- Mode A: API key + dual metering (verification period) ---
   # Base64-encoded "key:secret" from Inworld Studio > Workspace > API Keys.
   # When set, metering events go via gRPC to Inworld's billing endpoint.
+  # NOTE: During the verification period, customerId and GCP credentials are
+  # still required — both gRPC and PubSub metering run in parallel for BigQuery comparison.
   apiKey: ""
   # Inworld API endpoint (default: https://api.inworld.ai)
   apiEndpoint: "https://api.inworld.ai"
-  # Enable API key validation at startup (default: false)
-  enableAuthValidation: false
 
-  # --- Mode B: Customer ID + GCP SA metering (legacy) ---
-  # Required for PubSub-based metering. Not needed when apiKey is set.
+  # --- Customer ID (required for all modes) ---
+  # Maps to INWORLD_CUSTOMER_ID. Drives the PubSub metering topic and workspace ID.
   customerId: ""
 
 credentials:
-  # GCP service account key — required for Mode B (legacy), optional for Mode A.
+  # GCP service account key — required for all modes during the verification period.
   # Option A: chart creates a Secret from the inline key JSON (use --set-file)
   inlineKey: ""
   # Option B: reference a pre-existing Secret (takes precedence over inlineKey)

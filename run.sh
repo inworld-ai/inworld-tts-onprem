@@ -300,7 +300,23 @@ if [ -z "$TTS_IMAGE" ]; then
     ERRORS=$((ERRORS + 1))
 fi
 
-if [ "$METERING_MODE" = "legacy" ]; then
+if [ "$METERING_MODE" = "apikey" ]; then
+    # API key mode (verification period): customer ID + GCP credentials are still
+    # required — the container runs dual metering (gRPC + PubSub) for BigQuery comparison.
+    if [ -z "${INWORLD_CUSTOMER_ID:-}" ]; then
+        err "INWORLD_CUSTOMER_ID is required alongside INWORLD_API_KEY during the verification period."
+        err "  Both are needed: gRPC metering (new) + PubSub metering (legacy, for BigQuery comparison)."
+        ERRORS=$((ERRORS + 1))
+    fi
+    if [ -z "${KEY_FILE:-}" ]; then
+        err "KEY_FILE is required alongside INWORLD_API_KEY during the verification period."
+        err "  GCP credentials are needed for PubSub-based metering (BigQuery comparison)."
+        ERRORS=$((ERRORS + 1))
+    elif [ ! -f "$KEY_FILE" ]; then
+        err "Key file not found: $KEY_FILE"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
     # Legacy mode: customer ID + GCP credentials required
     if [ -z "${INWORLD_CUSTOMER_ID:-}" ]; then
         err "Neither INWORLD_API_KEY nor INWORLD_CUSTOMER_ID is set."
@@ -331,6 +347,8 @@ check "Metering mode: $METERING_MODE"
 if [ "$METERING_MODE" = "apikey" ]; then
     check "API endpoint: $INWORLD_API_ENDPOINT"
     check "Auth validation: $INWORLD_ENABLE_AUTH_VALIDATION"
+    check "Customer ID: $INWORLD_CUSTOMER_ID (dual-metering)"
+    check "Key file: $KEY_FILE (dual-metering)"
 
     # Validate API key at startup if auth validation is enabled
     if [ "$INWORLD_ENABLE_AUTH_VALIDATION" = "true" ]; then
@@ -391,14 +409,14 @@ DOCKER_ENV_ARGS=""
 DOCKER_VOLUME_ARGS=""
 
 if [ "$METERING_MODE" = "apikey" ]; then
+    # Dual-metering (verification period): pass both API key and legacy credentials.
+    # The container entrypoint runs gRPC metering (new) + PubSub metering (legacy)
+    # in parallel for BigQuery comparison.
     DOCKER_ENV_ARGS="-e INWORLD_API_KEY=$INWORLD_API_KEY"
     DOCKER_ENV_ARGS="$DOCKER_ENV_ARGS -e INWORLD_API_ENDPOINT=$INWORLD_API_ENDPOINT"
     DOCKER_ENV_ARGS="$DOCKER_ENV_ARGS -e INWORLD_METERING_MODE=grpc"
-    # GCP credentials are optional in API key mode but still mount if provided
-    if [ -n "${KEY_FILE:-}" ] && [ -f "${KEY_FILE:-}" ]; then
-        DOCKER_ENV_ARGS="$DOCKER_ENV_ARGS -e INWORLD_CUSTOMER_ID=${INWORLD_CUSTOMER_ID:-}"
-        DOCKER_VOLUME_ARGS="-v $(realpath "$KEY_FILE"):/app/gcp-credentials/.mounted-key.json:ro"
-    fi
+    DOCKER_ENV_ARGS="$DOCKER_ENV_ARGS -e INWORLD_CUSTOMER_ID=$INWORLD_CUSTOMER_ID"
+    DOCKER_VOLUME_ARGS="-v $(realpath "$KEY_FILE"):/app/gcp-credentials/.mounted-key.json:ro"
 else
     DOCKER_ENV_ARGS="-e INWORLD_CUSTOMER_ID=$INWORLD_CUSTOMER_ID"
     DOCKER_VOLUME_ARGS="-v $(realpath "$KEY_FILE"):/app/gcp-credentials/.mounted-key.json:ro"
