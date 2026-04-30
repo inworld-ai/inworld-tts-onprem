@@ -42,7 +42,7 @@ docker run --rm --gpus all nvidia/cuda:13.0.0-base-ubuntu22.04 nvidia-smi
 You should see your H100 GPU listed in the output.
 
 ## Latest Version
-**Version:** 20260218-a71f9f01
+**Version:** 20260430-5cfb3f10
 
 ## Quick Start
 
@@ -204,6 +204,19 @@ Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/`
 | `INWORLD_CUSTOMER_ID` | Yes | Your customer ID |
 | `TTS_IMAGE` | Yes | Docker image URL (see [Available Images](#available-images)) |
 | `KEY_FILE` | Yes | Path to your GCP service account key file |
+| `INWORLD_API_KEY` | No | Inworld API key. When set, metering events are also sent directly to Inworld. See [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key). |
+| `INWORLD_API_ENDPOINT` | No | Inworld API endpoint. Defaults to `https://api.inworld.ai`. |
+| `INWORLD_ENABLE_AUTH_VALIDATION` | No | Validate the API key at startup. Defaults to `false`. |
+
+### Using the API key
+
+Generate an API key by following [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key), then add it to `onprem.env`:
+
+```bash
+INWORLD_API_KEY=<your-api-key>
+```
+
+All other values (`INWORLD_CUSTOMER_ID`, `KEY_FILE`, `TTS_IMAGE`) remain required. Start the container with `./run.sh` as usual.
 
 ## Logs
 

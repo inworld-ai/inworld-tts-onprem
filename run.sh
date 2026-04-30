@@ -14,6 +14,7 @@
 #
 # All configuration is read from onprem.env. CLI flags override env file values:
 #   ./run.sh --customer-id <id> --image <url> --key <path>
+#   ./run.sh --api-key <value> --customer-id <id> --image <url> --key <path> [--api-endpoint <url>] [--enable-auth-validation]
 
 set -e
 
@@ -236,12 +237,19 @@ fi
 # =============================================================================
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --customer-id) INWORLD_CUSTOMER_ID="$2"; shift 2 ;;
-        --image)       TTS_IMAGE="$2"; shift 2 ;;
-        --key)         KEY_FILE="$2"; shift 2 ;;
+        --customer-id)              INWORLD_CUSTOMER_ID="$2"; shift 2 ;;
+        --image)                    TTS_IMAGE="$2"; shift 2 ;;
+        --key)                      KEY_FILE="$2"; shift 2 ;;
+        --api-key)                  INWORLD_API_KEY="$2"; shift 2 ;;
+        --api-endpoint)             INWORLD_API_ENDPOINT="$2"; shift 2 ;;
+        --enable-auth-validation)   INWORLD_ENABLE_AUTH_VALIDATION="true"; shift ;;
         *) shift ;;
     esac
 done
+
+# Defaults for API key mode
+INWORLD_API_ENDPOINT="${INWORLD_API_ENDPOINT:-https://api.inworld.ai}"
+INWORLD_ENABLE_AUTH_VALIDATION="${INWORLD_ENABLE_AUTH_VALIDATION:-false}"
 
 # =============================================================================
 # Prerequisite checks
@@ -273,25 +281,48 @@ else
 fi
 
 # =============================================================================
-# Validate configuration
+# Determine metering mode: API key (dual) or customer ID only (legacy)
 # =============================================================================
 echo ""
 info "Validating configuration..."
 
-ERRORS=0
-
-if [ -z "$INWORLD_CUSTOMER_ID" ]; then
-    err "INWORLD_CUSTOMER_ID is not set. Edit $ENV_FILE or pass --customer-id <id>"
-    ERRORS=$((ERRORS + 1))
+if [ -n "${INWORLD_API_KEY:-}" ]; then
+    METERING_MODE="apikey"
+else
+    METERING_MODE="legacy"
 fi
 
+ERRORS=0
+
+# TTS_IMAGE is always required
 if [ -z "$TTS_IMAGE" ]; then
     err "TTS_IMAGE is not set. Edit $ENV_FILE or pass --image <url>"
     ERRORS=$((ERRORS + 1))
 fi
 
-if [ -z "$KEY_FILE" ]; then
-    err "KEY_FILE is not set. Edit $ENV_FILE or pass --key <path>"
+# Customer ID and GCP credentials are required for ALL modes.
+# In API key mode the container runs dual metering (gRPC + PubSub) for
+# BigQuery comparison during the verification period.
+if [ -z "${INWORLD_CUSTOMER_ID:-}" ]; then
+    if [ "$METERING_MODE" = "apikey" ]; then
+        err "INWORLD_CUSTOMER_ID is required alongside INWORLD_API_KEY during the verification period."
+        err "  Both are needed: gRPC metering (new) + PubSub metering (legacy, for BigQuery comparison)."
+    else
+        err "INWORLD_CUSTOMER_ID is not set. Edit $ENV_FILE or pass --customer-id <id>"
+    fi
+    ERRORS=$((ERRORS + 1))
+fi
+
+if [ -z "${KEY_FILE:-}" ]; then
+    if [ "$METERING_MODE" = "apikey" ]; then
+        err "KEY_FILE is required alongside INWORLD_API_KEY during the verification period."
+        err "  GCP credentials are needed for PubSub-based metering (BigQuery comparison)."
+    else
+        err "KEY_FILE is not set. Edit $ENV_FILE or pass --key <path>"
+    fi
+    ERRORS=$((ERRORS + 1))
+elif [ ! -f "$KEY_FILE" ]; then
+    err "Key file not found: $KEY_FILE"
     ERRORS=$((ERRORS + 1))
 fi
 
@@ -302,15 +333,35 @@ if [ $ERRORS -gt 0 ]; then
     exit 1
 fi
 
-# Validate key file exists
-if [ ! -f "$KEY_FILE" ]; then
-    err "Key file not found: $KEY_FILE"
-    exit 1
-fi
-
-check "Customer ID: $INWORLD_CUSTOMER_ID"
+# Display configuration summary
 check "Image: $TTS_IMAGE"
+check "Metering mode: $METERING_MODE"
+check "Customer ID: $INWORLD_CUSTOMER_ID"
 check "Key file: $KEY_FILE"
+
+if [ "$METERING_MODE" = "apikey" ]; then
+    check "API endpoint: $INWORLD_API_ENDPOINT"
+    check "Auth validation: $INWORLD_ENABLE_AUTH_VALIDATION"
+
+    # Validate API key at startup if auth validation is enabled
+    if [ "$INWORLD_ENABLE_AUTH_VALIDATION" = "true" ]; then
+        info "Validating API key against $INWORLD_API_ENDPOINT..."
+        HTTP_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Basic $INWORLD_API_KEY" \
+            "$INWORLD_API_ENDPOINT/tts/v1/voices" 2>/dev/null) || HTTP_STATUS="000"
+
+        if [ "$HTTP_STATUS" = "200" ]; then
+            check "API key: valid"
+        elif [ "$HTTP_STATUS" = "401" ] || [ "$HTTP_STATUS" = "403" ]; then
+            err "API key validation failed (HTTP $HTTP_STATUS). Check your INWORLD_API_KEY."
+            exit 1
+        else
+            warn "API key validation returned HTTP $HTTP_STATUS (endpoint may be unreachable). Proceeding anyway."
+        fi
+    else
+        check "API key: configured (auth validation disabled)"
+    fi
+fi
 
 # =============================================================================
 # Check if container already exists
@@ -343,13 +394,25 @@ fi
 echo ""
 info "Starting container..."
 
+# Build docker run arguments based on metering mode
+DOCKER_ENV_ARGS="-e INWORLD_CUSTOMER_ID=$INWORLD_CUSTOMER_ID"
+
+if [ "$METERING_MODE" = "apikey" ]; then
+    # Dual-metering (verification period): pass both API key and legacy credentials.
+    # The container entrypoint runs gRPC metering (new) + PubSub metering (legacy)
+    # in parallel for BigQuery comparison.
+    DOCKER_ENV_ARGS="$DOCKER_ENV_ARGS -e INWORLD_API_KEY=$INWORLD_API_KEY"
+    DOCKER_ENV_ARGS="$DOCKER_ENV_ARGS -e INWORLD_API_ENDPOINT=$INWORLD_API_ENDPOINT"
+    DOCKER_ENV_ARGS="$DOCKER_ENV_ARGS -e INWORLD_METERING_MODE=grpc"
+fi
+
 # shellcheck disable=SC2086
 docker run -d \
     --gpus all \
     --name "$CONTAINER_NAME" \
     -p 8081:8081 \
     -p 9030:9030 \
-    -e INWORLD_CUSTOMER_ID="$INWORLD_CUSTOMER_ID" \
+    $DOCKER_ENV_ARGS \
     -v "$(realpath "$KEY_FILE"):/app/gcp-credentials/.mounted-key.json:ro" \
     ${DOCKER_EXTRA_ARGS:-} \
     "$TTS_IMAGE" >/dev/null
