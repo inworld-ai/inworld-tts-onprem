@@ -134,6 +134,124 @@ tests:
         failedTemplate:
           errorMessage: "Either credentials.inlineKey or credentials.existingSecret must be set"
 
+  # ---------------------------------------------------------------------------
+  # API key mode: inline apiKey sets INWORLD_API_KEY, INWORLD_API_ENDPOINT,
+  # and INWORLD_METERING_MODE env vars
+  # ---------------------------------------------------------------------------
+  - it: should set INWORLD_API_KEY env var inline when config.apiKey is set
+    set:
+      config.customerId: test
+      config.apiKey: test-api-key-value
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_API_KEY
+            value: test-api-key-value
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_API_ENDPOINT
+            value: https://api.inworld.ai
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_METERING_MODE
+            value: "grpc"
+
+  # ---------------------------------------------------------------------------
+  # API key mode: custom apiEndpoint is honored
+  # ---------------------------------------------------------------------------
+  - it: should honor custom config.apiEndpoint when set
+    set:
+      config.customerId: test
+      config.apiKey: test-api-key-value
+      config.apiEndpoint: https://api.dev.inworld.dev
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_API_ENDPOINT
+            value: https://api.dev.inworld.dev
+
+  # ---------------------------------------------------------------------------
+  # API key mode: apiKeySecret uses secretKeyRef (not plaintext)
+  # ---------------------------------------------------------------------------
+  - it: should use secretKeyRef when config.apiKeySecret.name is set
+    set:
+      config.customerId: test
+      config.apiKeySecret.name: my-api-key-secret
+      config.apiKeySecret.key: api-key
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: my-api-key-secret
+                key: api-key
+
+  # ---------------------------------------------------------------------------
+  # API key mode: apiKeySecret takes precedence over inline apiKey
+  # ---------------------------------------------------------------------------
+  - it: should prefer secretKeyRef over inline value when both are set
+    set:
+      config.customerId: test
+      config.apiKey: inline-plaintext-value
+      config.apiKeySecret.name: my-api-key-secret
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: my-api-key-secret
+                key: api-key
+      # Ensure plaintext value is NOT present
+      - template: deployment.yaml
+        notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_API_KEY
+            value: inline-plaintext-value
+
+  # ---------------------------------------------------------------------------
+  # Legacy mode: no API key env vars when config.apiKey is unset
+  # ---------------------------------------------------------------------------
+  - it: should not set API key env vars when config.apiKey and apiKeySecret are unset
+    set:
+      config.customerId: test
+      image.tag: test
+      credentials.inlineKey: '{"type":"service_account"}'
+    asserts:
+      - template: deployment.yaml
+        notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_API_KEY
+      - template: deployment.yaml
+        notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INWORLD_METERING_MODE
+            value: "grpc"
+
 ---
 suite: service tests
 templates:

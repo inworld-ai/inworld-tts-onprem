@@ -50,6 +50,21 @@ spec:
           env:
             - name: INWORLD_CUSTOMER_ID
               value: {{ required "config.customerId is required" .Values.config.customerId | quote }}
+            {{- if or .Values.config.apiKey .Values.config.apiKeySecret.name }}
+            - name: INWORLD_API_KEY
+              {{- if .Values.config.apiKeySecret.name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.apiKeySecret.name }}
+                  key: {{ .Values.config.apiKeySecret.key }}
+              {{- else }}
+              value: {{ .Values.config.apiKey | quote }}
+              {{- end }}
+            - name: INWORLD_API_ENDPOINT
+              value: {{ .Values.config.apiEndpoint | quote }}
+            - name: INWORLD_METERING_MODE
+              value: "grpc"
+            {{- end }}
           ports:
             - name: http
               containerPort: 8081

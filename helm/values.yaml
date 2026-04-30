@@ -13,8 +13,20 @@ imagePullSecrets: []
 replicaCount: 1
 
 config:
-  # Required: maps to INWORLD_CUSTOMER_ID env var (drives PubSub metering topic)
+  # Required: maps to INWORLD_CUSTOMER_ID env var (drives PubSub metering topic + workspace ID)
   customerId: ""
+  # Optional: Inworld API key for gRPC-based metering.
+  # See https://docs.inworld.ai/api-reference/introduction#getting-an-api-key
+  # NOTE: customerId and GCP credentials are still required alongside the API key.
+  #
+  # Set the key directly:
+  apiKey: ""
+  # Or reference an existing Kubernetes Secret (takes precedence over apiKey):
+  apiKeySecret:
+    name: ""       # e.g. "inworld-api-key"
+    key: "api-key" # key within the Secret
+  # Inworld API endpoint (default: https://api.inworld.ai)
+  apiEndpoint: "https://api.inworld.ai"
 
 credentials:
   # Option A: chart creates a Secret from the inline key JSON (use --set-file)
