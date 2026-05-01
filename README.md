@@ -42,7 +42,7 @@ docker run --rm --gpus all nvidia/cuda:13.0.0-base-ubuntu22.04 nvidia-smi
 You should see your H100 GPU listed in the output.
 
 ## Latest Version
-**Version:** 20260430-5cfb3f10
+**Version:** TBD
 
 ## Quick Start
 
@@ -68,7 +68,11 @@ gcloud iam service-accounts keys create service-account-key.json \
 Send the service account email (e.g., `inworld-tts-onprem@<YOUR_GCP_PROJECT>.iam.gserviceaccount.com`) to your Inworld contact. Inworld will:
 - Provide your **Customer ID**
 
-### 3. Authenticate to the container registry
+### 3. Create an Inworld API key
+
+Generate an API key from the Inworld portal by following [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key). You will paste this value into `onprem.env` in step 5.
+
+### 4. Authenticate to the container registry
 
 ```bash
 gcloud auth activate-service-account \
@@ -79,7 +83,7 @@ gcloud auth configure-docker us-central1-docker.pkg.dev
 
 For more authentication options, see [Configure authentication to Artifact Registry for Docker](https://docs.cloud.google.com/artifact-registry/docs/docker/authentication#gcloud-helper).
 
-### 4. Configure
+### 5. Configure
 
 ```bash
 cp onprem.env.example onprem.env
@@ -89,11 +93,12 @@ Edit `onprem.env` with your values:
 
 ```bash
 INWORLD_CUSTOMER_ID=<your-customer-id>
+INWORLD_API_KEY=<your-api-key>
 TTS_IMAGE=us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 KEY_FILE=./service-account-key.json
 ```
 
-### 5. Start
+### 6. Start
 
 ```bash
 ./run.sh
@@ -201,22 +206,12 @@ Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/`
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `INWORLD_CUSTOMER_ID` | Yes | Your customer ID |
+| `INWORLD_CUSTOMER_ID` | Yes | Your customer ID (provided by Inworld) |
+| `INWORLD_API_KEY` | Yes | Inworld API key. See [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key). |
 | `TTS_IMAGE` | Yes | Docker image URL (see [Available Images](#available-images)) |
 | `KEY_FILE` | Yes | Path to your GCP service account key file |
-| `INWORLD_API_KEY` | No | Inworld API key. When set, metering events are also sent directly to Inworld. See [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key). |
 | `INWORLD_API_ENDPOINT` | No | Inworld API endpoint. Defaults to `https://api.inworld.ai`. |
 | `INWORLD_ENABLE_AUTH_VALIDATION` | No | Validate the API key at startup. Defaults to `false`. |
-
-### Using the API key
-
-Generate an API key by following [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key), then add it to `onprem.env`:
-
-```bash
-INWORLD_API_KEY=<your-api-key>
-```
-
-All other values (`INWORLD_CUSTOMER_ID`, `KEY_FILE`, `TTS_IMAGE`) remain required. Start the container with `./run.sh` as usual.
 
 ## Logs
 
@@ -236,6 +231,7 @@ All other values (`INWORLD_CUSTOMER_ID`, `KEY_FILE`, `TTS_IMAGE`) remain require
 | Issue | Solution |
 |-------|----------|
 | "INWORLD_CUSTOMER_ID is required" | Set `INWORLD_CUSTOMER_ID` in `onprem.env` |
+| "INWORLD_API_KEY is required" | Set `INWORLD_API_KEY` in `onprem.env`. Generate one via [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key) |
 | "GCP credentials not found" | Check that `KEY_FILE` in `onprem.env` points to a valid file |
 | "Topic not found" | Verify your `INWORLD_CUSTOMER_ID` is correct. Contact Inworld support if the issue persists |
 | "Permission denied for topic" | Contact Inworld support to verify your service account has been granted the required access |
@@ -274,6 +270,7 @@ docker run -d \
   -p 8081:8081 \
   -p 9030:9030 \
   -e INWORLD_CUSTOMER_ID=<your-customer-id> \
+  -e INWORLD_API_KEY=<your-api-key> \
   -v $(pwd)/service-account-key.json:/app/gcp-credentials/.mounted-key.json:ro \
   us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:<version>
 ```
