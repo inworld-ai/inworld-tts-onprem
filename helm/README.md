@@ -45,6 +45,27 @@ Three values **must** be set — the chart will refuse to render without them.
 | `config.customerId` | Your customer ID, provided by Inworld | `onprem-metering-acme-corp` |
 | `credentials.inlineKey` **or** `credentials.existingSecret` | GCP service account key (see below) | — |
 
+### Optional: Inworld API key
+
+To enable direct gRPC metering to Inworld, generate an API key by following [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key), then pass it via `config.apiKey` (or reference an existing Secret via `config.apiKeySecret.name`). All required values above still apply.
+
+```bash
+# Inline value
+helm install inworld-tts ./helm \
+  --set image.tag=20240301-ab12cd34 \
+  --set config.customerId=onprem-metering-acme-corp \
+  --set-file credentials.inlineKey=./sa-key.json \
+  --set config.apiKey=<your-api-key>
+
+# Or reference a pre-existing Kubernetes Secret
+kubectl create secret generic inworld-api-key --from-literal=api-key=<your-api-key>
+helm install inworld-tts ./helm \
+  --set image.tag=20240301-ab12cd34 \
+  --set config.customerId=onprem-metering-acme-corp \
+  --set-file credentials.inlineKey=./sa-key.json \
+  --set config.apiKeySecret.name=inworld-api-key
+```
+
 ---
 
 ## Preparing the GCP credentials
@@ -228,6 +249,10 @@ kubectl rollout restart deployment/inworld-tts
 | `image.pullPolicy` | `IfNotPresent` | Kubernetes image pull policy |
 | `imagePullSecrets` | `[]` | Registry pull secrets (if your cluster can't reach GCP directly) |
 | `config.customerId` | `""` | **Required.** Your Inworld customer ID |
+| `config.apiKey` | `""` | Optional Inworld API key. See [Getting an API key](https://docs.inworld.ai/api-reference/introduction#getting-an-api-key). Rendered inline — use `config.apiKeySecret` for production. |
+| `config.apiKeySecret.name` | `""` | Name of a pre-existing Secret containing the API key. Takes precedence over `config.apiKey`. |
+| `config.apiKeySecret.key` | `api-key` | Key name inside the Secret. |
+| `config.apiEndpoint` | `https://api.inworld.ai` | Inworld API endpoint. Override only if instructed by Inworld. |
 | `credentials.inlineKey` | `""` | GCP SA key JSON (use `--set-file`). Creates a chart-managed Secret. |
 | `credentials.existingSecret` | `""` | Name of a pre-existing Secret containing the key. Takes precedence over `inlineKey`. |
 | `credentials.existingSecretKey` | `key.json` | Key name inside the Secret |
