@@ -72,14 +72,14 @@ spec:
             - name: grpc
               containerPort: 9030
               protocol: TCP
-          # startupProbe gates liveness/readiness until the ~6-min TensorRT model load completes.
-          # 40 failures × 10s period = 400s maximum startup window.
+          # startupProbe gates liveness/readiness until inference + serving are ready.
+          # 12 failures × 10s period = 120s maximum startup window.
           startupProbe:
             httpGet:
               path: /tts/v1/voices
               port: http
             periodSeconds: 10
-            failureThreshold: 40
+            failureThreshold: 12
             successThreshold: 1
             timeoutSeconds: 5
           livenessProbe:

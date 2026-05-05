@@ -21,7 +21,7 @@ set -e
 CONTAINER_NAME="inworld-tts-onprem"
 ENV_FILE="onprem.env"
 HEALTH_URL="http://localhost:8081/tts/v1/voices"
-HEALTH_TIMEOUT=360  # 6 minutes max wait
+HEALTH_TIMEOUT=120  # 2 minutes max wait
 
 # =============================================================================
 # Colors and output helpers
@@ -59,7 +59,7 @@ case "${1:-}" in
         exit 0
         ;;
     logs)
-        LOG_FILES="supervisord.log tts-v3-trtllm.log tts-normalization.log forced-alignment.log public-tts-service.log w-proxy.log grpc-gateway.log"
+        LOG_FILES="supervisord.log tts-inference.log tts-serving.log tts-normalization.log forced-alignment.log public-tts-service.log w-proxy.log grpc-gateway.log"
         if [ "${2:-}" = "export" ]; then
             DIR="tts-logs-$(date +%Y%m%d_%H%M%S)"
             mkdir -p "$DIR"
@@ -69,7 +69,8 @@ case "${1:-}" in
         elif [ "${2:-}" = "-f" ]; then
             docker exec "$CONTAINER_NAME" tail -f \
                 /var/log/supervisord.log \
-                /var/log/tts-v3-trtllm.log \
+                /var/log/tts-inference.log \
+                /var/log/tts-serving.log \
                 /var/log/tts-normalization.log \
                 /var/log/forced-alignment.log \
                 /var/log/public-tts-service.log \
@@ -423,7 +424,7 @@ ok "Container started."
 # Wait for health
 # =============================================================================
 echo ""
-info "Waiting for TTS services to be ready (this takes ~3 minutes)..."
+info "Waiting for TTS services to be ready (this takes ~1 minute)..."
 
 ELAPSED=0
 INTERVAL=10

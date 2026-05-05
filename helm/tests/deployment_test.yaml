@@ -99,7 +99,7 @@ tests:
   # ---------------------------------------------------------------------------
   # startupProbe failureThreshold
   # ---------------------------------------------------------------------------
-  - it: should set startupProbe.failureThreshold to 40
+  - it: should set startupProbe.failureThreshold to 12
     set:
       config.customerId: test
       image.tag: test
@@ -108,7 +108,7 @@ tests:
       - template: deployment.yaml
         equal:
           path: spec.template.spec.containers[0].startupProbe.failureThreshold
-          value: 40
+          value: 12
 
   # ---------------------------------------------------------------------------
   # required template: customerId empty → fail

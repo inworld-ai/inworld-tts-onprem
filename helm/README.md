@@ -185,11 +185,11 @@ Manager to apply NUMA alignment automatically.
 
 ## Startup time
 
-The container loads TensorRT models on startup, which takes **~6 minutes**.
+The container loads the TensorRT inference engine on startup, which takes **~1 minute**.
 `helm install --wait` will block until the service is ready:
 
 ```bash
-helm install inworld-tts ... --wait --timeout 10m
+helm install inworld-tts ... --wait --timeout 5m
 ```
 
 The pod will show `0/1 Running` during model load — this is expected.
@@ -221,7 +221,7 @@ helm upgrade inworld-tts ./helm \
 ```
 
 The chart uses `strategy: Recreate`, so the old pod is terminated before the new
-one starts. Expect ~6 minutes of downtime during the model reload.
+one starts. Expect ~1 minute of downtime during the model reload.
 
 If you rotate the GCP service account key, update the Secret and then restart
 the pod to pick up the new credentials:

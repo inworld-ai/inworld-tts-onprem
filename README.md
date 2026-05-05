@@ -42,7 +42,7 @@ docker run --rm --gpus all nvidia/cuda:13.0.0-base-ubuntu22.04 nvidia-smi
 You should see your H100 GPU listed in the output.
 
 ## Latest Version
-**Version:** 20260430-5cfb3f10
+**Version:** 20260505-4369e353
 
 ## Quick Start
 
@@ -109,9 +109,9 @@ The script will:
 2. Validate your configuration
 3. Pull the Docker image
 4. Start the container
-5. Wait for services to be ready (~3 minutes)
+5. Wait for services to be ready (~1 minute)
 
-> **Note:** The ML model takes approximately 3 minutes to load on first startup. This is normal.
+> **Note:** The inference engine takes approximately 1 minute to load on first startup. This is normal.
 
 ## Lifecycle Commands
 
@@ -235,7 +235,7 @@ Registry: `us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/`
 | "GCP credentials not found" | Check that `KEY_FILE` in `onprem.env` points to a valid file |
 | "Topic not found" | Verify your `INWORLD_CUSTOMER_ID` is correct. Contact Inworld support if the issue persists |
 | "Permission denied for topic" | Contact Inworld support to verify your service account has been granted the required access |
-| Slow startup (~3 min) | Normal -- text processing grammars take time to initialize |
+| Slow startup (~1 min) | Normal -- the TensorRT inference engine takes time to initialize |
 
 ### Run diagnostics
 
