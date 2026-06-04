@@ -282,6 +282,10 @@ tests:
             targetPort: grpc
             protocol: TCP
             appProtocol: kubernetes.io/h2c
+      # WebSocket is HTTP Upgrade on httpPort; no separate Service port needed.
+      - lengthEqual:
+          path: spec.ports
+          count: 2
 
   # ---------------------------------------------------------------------------
   # Service port overrides

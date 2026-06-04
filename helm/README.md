@@ -205,9 +205,11 @@ kubectl get pod -l app.kubernetes.io/name=inworld-tts
 # Run the built-in connectivity test
 helm test inworld-tts --timeout 5m
 
-# Hit the API directly via port-forward
-kubectl port-forward svc/inworld-tts 8081:8081 9030:9030
+# Hit the API directly via port-forward. REST + WS both ride port 8081
+# (same listener); gRPC is on 9030.
+kubectl port-forward svc/inworld-tts 8081:http 9030:grpc
 curl http://localhost:8081/tts/v1/voices
+# WS: ws://localhost:8081/tts/v1/voice:streamBidirectional
 ```
 
 ---
@@ -257,7 +259,7 @@ kubectl rollout restart deployment/inworld-tts
 | `credentials.existingSecret` | `""` | Name of a pre-existing Secret containing the key. Takes precedence over `inlineKey`. |
 | `credentials.existingSecretKey` | `key.json` | Key name inside the Secret |
 | `service.type` | `ClusterIP` | Kubernetes Service type (`ClusterIP`, `LoadBalancer`, `NodePort`) |
-| `service.httpPort` | `8081` | HTTP REST port |
+| `service.httpPort` | `8081` | HTTP REST + WebSocket port. WS is HTTP Upgrade on the same TCP listener. |
 | `service.grpcPort` | `9030` | gRPC port (h2c / plaintext HTTP/2) |
 | `resources.limits` | 1 GPU, 128Gi RAM, 20 CPU | Pod resource limits. Sized for a standard 1×H100 node (e.g. Azure NC40ads_H100_v5: 40 vCPU, 320 GiB). Adjust if your node has different capacity. |
 | `resources.requests` | 1 GPU, 128Gi RAM, 20 CPU | Pod resource requests (equal to limits — Guaranteed QoS). |
@@ -283,12 +285,36 @@ The chart creates a `ClusterIP` Service by default. To expose it:
 helm upgrade inworld-tts ... --set service.type=LoadBalancer
 ```
 
-**Ingress** — note that the gRPC port (9030) uses plaintext HTTP/2 (h2c).
+**Ingress (gRPC)** — note that the gRPC port (9030) uses plaintext HTTP/2 (h2c).
 Your Ingress controller must support h2c backends. With NGINX:
 ```yaml
 nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
 nginx.ingress.kubernetes.io/grpc-backend: "true"
 ```
+
+**Ingress (WebSocket)** — the WS endpoint is at
+`/tts/v1/voice:streamBidirectional` on the same `http` Service port as REST.
+Two non-default settings are required when fronting it with an NGINX
+ingress; everything else is stock:
+
+| Setting | Value | Why |
+|---|---|---|
+| `pathType` | `ImplementationSpecific` | The `:` in the path fails K8s path validation for `Exact`/`Prefix` ([ingress-nginx #11176](https://github.com/kubernetes/ingress-nginx/issues/11176)) |
+| `nginx.ingress.kubernetes.io/proxy-read-timeout` | `3600` | WS connections idle between text/audio frames; the 60s default closes them ([ingress-nginx WebSocket docs](https://kubernetes.github.io/ingress-nginx/user-guide/miscellaneous/#websockets)) |
+| `nginx.ingress.kubernetes.io/proxy-send-timeout` | `3600` | Same — long-lived duplex |
+
+`Upgrade: websocket` and `Connection: upgrade` are auto-forwarded by
+ingress-nginx ≥ 0.40 — no extra annotation needed.
+
+**HTTP/2-native proxies (Envoy-based: Istio, Gloo, Emissary, Contour,
+Envoy Gateway, etc.)** don't hit the `pathType` constraint — they treat
+paths as opaque and route by their own matcher. The customer's controller
+docs are authoritative; the schema of the requirement is the same as
+NGINX (long idle timeouts + verbatim path match).
+
+Terminate TLS at the Ingress so customers connect via
+`wss://tts.example.com/tts/v1/voice:streamBidirectional`. The container
+itself speaks plaintext WS.
 
 ---
 

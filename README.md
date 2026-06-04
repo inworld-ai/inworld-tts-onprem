@@ -42,7 +42,7 @@ docker run --rm --gpus all nvidia/cuda:13.0.0-base-ubuntu22.04 nvidia-smi
 You should see your H100 GPU listed in the output.
 
 ## Latest Version
-**Version:** 20260505-4369e353
+**Version:** 20260604-2f320f9e
 
 ## Quick Start
 
@@ -131,6 +131,7 @@ The script will:
 | Port | Protocol | Description |
 |------|----------|-------------|
 | **8081** | HTTP | REST API (recommended) |
+| **8081** | WebSocket | Bidirectional streaming TTS (`/tts/v1/voice:streamBidirectional`) — shares the HTTP listener |
 | **9030** | gRPC | For gRPC clients |
 
 ### Health Check
@@ -190,6 +191,15 @@ grpcurl -plaintext -d '{
 ```
 
 For full API documentation, see [Synthesize Speech](https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech).
+
+### WebSocket (bidirectional streaming)
+
+For bidirectional streaming TTS, open a WebSocket to
+`ws://localhost:8081/tts/v1/voice:streamBidirectional`. Frame schema,
+client examples, and the per-request auth header format: [Synthesize Speech (WebSocket)](https://docs.inworld.ai/api-reference/ttsAPI/texttospeech/synthesize-speech-websocket).
+
+The on-prem container speaks plaintext WebSocket — terminate TLS at your
+Ingress / load balancer for `wss://`.
 
 ## Available Images
 
@@ -276,7 +286,7 @@ docker run -d \
 ```
 
 **Notes:**
-- The container exposes port 8081 (HTTP) and 9030 (gRPC)
+- The container exposes port 8081 (HTTP + WebSocket — same listener serves both) and 9030 (gRPC)
 - Use `docker ps` to check container health -- STATUS will show `healthy` when ready
 
 ```bash

@@ -37,6 +37,7 @@ credentials:
 
 service:
   type: ClusterIP
+  # WebSocket is HTTP Upgrade on httpPort (one TCP listener); no separate wsPort needed.
   httpPort: 8081
   grpcPort: 9030
 
