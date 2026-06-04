@@ -3,7 +3,7 @@ fullnameOverride: ""
 
 image:
   registry: us-central1-docker.pkg.dev
-  repository: inworld-ai-registry/backend/tts-1.5-mini-h100-onprem
+  repository: inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem
   # tag is required — e.g. 20240301-ab12cd34
   tag: ""
   pullPolicy: IfNotPresent

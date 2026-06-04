@@ -16,7 +16,7 @@ tests:
       - template: deployment.yaml
         equal:
           path: spec.template.spec.containers[0].image
-          value: us-central1-docker.pkg.dev/inworld-ai-registry/backend/tts-1.5-mini-h100-onprem:20240301-ab12cd34
+          value: us-central1-docker.pkg.dev/inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem:20240301-ab12cd34
 
   # ---------------------------------------------------------------------------
   # INWORLD_CUSTOMER_ID env var

@@ -9,8 +9,8 @@ representative to confirm which image is included in your agreement.
 
 | Variant | Model | `image.repository` |
 |---------|-------|--------------------|
-| Mini | inworld-tts-1.5-mini | `inworld-ai-registry/backend/tts-1.5-mini-h100-onprem` |
-| Max | inworld-tts-1.5-max | `inworld-ai-registry/backend/tts-1.5-max-h100-onprem` |
+| Mini | inworld-tts-1.5-mini | `inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem` |
+| Max | inworld-tts-1.5-max | `inworld-ai-registry/tts-onprem/tts-1.5-max-h100-onprem` |
 
 GPU types other than H100 are available by request.
 
@@ -41,7 +41,7 @@ Three values **must** be set — the chart will refuse to render without them.
 | Value | Description | Example |
 |-------|-------------|---------|
 | `image.tag` | Image tag provided by Inworld for your release | `20240301-ab12cd34` |
-| `image.repository` | Set to match your variant (see table above) | `inworld-ai-registry/backend/tts-1.5-mini-h100-onprem` |
+| `image.repository` | Set to match your variant (see table above) | `inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem` |
 | `config.customerId` | Your customer ID, provided by Inworld | `onprem-metering-acme-corp` |
 | `credentials.inlineKey` **or** `credentials.existingSecret` | GCP service account key (see below) | — |
 
@@ -246,7 +246,7 @@ kubectl rollout restart deployment/inworld-tts
 | Value | Default | Description |
 |-------|---------|-------------|
 | `image.registry` | `us-central1-docker.pkg.dev` | Container registry |
-| `image.repository` | `inworld-ai-registry/backend/tts-1.5-mini-h100-onprem` | Image repository |
+| `image.repository` | `inworld-ai-registry/tts-onprem/tts-1.5-mini-h100-onprem` | Image repository |
 | `image.tag` | `""` | **Required.** Image tag provided by Inworld |
 | `image.pullPolicy` | `IfNotPresent` | Kubernetes image pull policy |
 | `imagePullSecrets` | `[]` | Registry pull secrets (if your cluster can't reach GCP directly) |
